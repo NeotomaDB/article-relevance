@@ -1,5 +1,6 @@
 # Author Kelly Wu
-# 2023-06-07
+# Modified by Socorro Dominguez
+# Update 2023-08-22
 
 # GDD Recent Article Query
 # Input: parameters to specify article range

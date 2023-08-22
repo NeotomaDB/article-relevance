@@ -93,7 +93,7 @@ def crossref_extract(doi_path):
             crossref = pd.concat([crossref, ref_df])
 
         else: 
-            pass
+            print("That DOI did not return a 200 API call")
     
     logger.info(f'CrossRef API query completed for {len(input_doi)} articles.')
 
