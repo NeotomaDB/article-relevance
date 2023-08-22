@@ -29,8 +29,11 @@ keysToKeep = {'DOI',
         'title'
 }
 
-for i in range(len(df_dict)):
+for i in range(0, len(df_dict)):
+    print(i)
+    df_dict2 = dict()
     doi = df_dict[i]['doi']
+    print(doi)
     url = f"https://api.crossref.org/works/{doi}"
     try:
         response = requests.get(url)
