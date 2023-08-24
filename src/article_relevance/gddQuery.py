@@ -6,24 +6,17 @@ from logs import get_logger
 import requests
 import json
 from datetime import date
-from loadPQ import loadPQ
+from article_relevance import loadPQ
 
 logger = get_logger(__name__)
 
 def gddQuery(df = None,
-             parquetPath = "data/parquet",
              n_recent_articles = None, 
              min_date = None, 
              max_date = None, 
              term = None,
-             auto_check_dup = False):   
-    if df is not None:
-         df = loadPQ(parquetPath)
-         dois = df['DOI']
-         logger.info(f'Querying new articles only')
-    else:
-         logger.info(f'Querying all')
-         df = pd.DataFrame()
+             auto_check_dup = True):   
+    
     # ======== Tests for input data type ==========
     if (n_recent_articles is None) and (min_date is None and max_date is None):
             raise ValueError("Either n_recent_articles or a date range should be specified.")
@@ -107,57 +100,21 @@ def gddQuery(df = None,
         gdd_df = pd.concat([gdd_df, one_article])
     gdd_df = gdd_df.reset_index(drop=True)
     logger.info(f'{gdd_df.shape[0]} articles returned from GeoDeepDive.')
-    return gdd_df
-
 
     # # ========== Get list of existing gddids from the parquet files =========
-    # if auto_check_dup.lower() == "true":
-    #     # Get the list of existing IDs from the Parquet files
-    #     logger.info(f'auto_check_dup is True. Removing duplicates.')
+    if auto_check_dup == True:
+        if not isinstance(df, pd.DataFrame)  or 'gddid' not in df.columns:
+             raise KeyError('A data frame with gddids must be provided to check for duplicates')
+        gddids = df['gddid'].unique().tolist()
 
-    #     file_list = os.listdir(parquetPath)
-    #     if len(file_list) == 0:
-    #         logger.warning(f'auto_check_dup is True, but no existing parquet file found. All queried articles will be returned.')
-    #         result_df = gdd_df.copy()
+        ## Filter from gdd_df all the values that already exist in the parquet:
 
-    #     else:
-    #         existing_ids = set()
-    #         for file_name in os.listdir(parquetPath):
-    #             file_path = os.path.join(parquetPath, file_name)
-    #             if file_name.endswith(".parquet") and os.path.isfile(file_path):
-    #                 # Read only the ID column from the Parquet file
-    #                 gdd_one_file = pq.read_table(file_path, columns=["gddid"]).to_pandas()
-    #                 existing_ids.update(gdd_one_file["gddid"])
-        
-    #         # remove the duplicates
-    #         result_df = gdd_df[~gdd_df["gddid"].isin(existing_ids)]
-    #         logger.info(f'{result_df.shape[0]} articles are new addition for relevance prediction.')
-        
-    # else:
-    #      result_df = gdd_df.copy()
-
-    # # ========= Output JSON (intermediate file for next step, will be deleted by makefile)===========
-    # result_dict = {}
-
-    # # pass the query info to prediction step (for saving in the parquet file)
-    # result_dict['queryinfo_min_date'] = min_date
+        result_df = gdd_df[~gdd_df['gddid'].isin(gddids)]
     
-    # if max_date is None:
-    #     current_date = date.today()
-    #     formatted_date = current_date.strftime("%Y-%m-%d")
-    #     result_dict['queryinfo_max_date'] = formatted_date
-    # else:
-    #     result_dict['queryinfo_max_date'] = max_date
+        logger.info(f'{result_df.shape[0]} articles are new addition for relevance prediction.')
+        
+    else:
+        logger.info(f'Querying all')
+        result_df = gdd_df.copy()
 
-    # result_dict['queryinfo_n_recent'] = n_recent_articles
-    # result_dict['queryinfo_term'] = term
-
-    # result_dict['data'] = result_df.to_dict()
-
-    # # Write the JSON object to a file
-    # directory = os.path.join(parquetPath)
-    # if not os.path.exists(directory):
-    #     os.makedirs(directory)
-
-    # with open(parquetPath + '/gdd_api_return.json', "w") as file:
-    #     json.dump(result_dict, file)
+    return result_df

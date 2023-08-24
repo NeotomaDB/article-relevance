@@ -1,7 +1,9 @@
 import requests
 import warnings
 from datetime import datetime
-def queryCrossRef(doi_list):
+
+## Todo add environ variable to use email
+def crossRefQuery(doi_list):
     crossRefDict = list()
     keysToKeep = {'DOI', 'URL', 'abstract', 'author','container-title',
         'is-referenced-by-count', 'language', 'published', 'publisher', 
