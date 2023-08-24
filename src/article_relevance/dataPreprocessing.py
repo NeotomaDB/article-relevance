@@ -1,4 +1,3 @@
-import pandas as pd
 from .enHelper import enHelper
 from logs import get_logger
 
@@ -32,9 +31,9 @@ def dataPreprocessing(metadataDF):
     # Clean text in title, subtitle, abstract
     metadataDF['title'] = metadataDF['title'].fillna(value='').apply(lambda x: ''.join(x))
     metadataDF['subtitle'] = metadataDF['subtitle'].fillna(value='').apply(lambda x: ''.join(x))
-    #metadataDF['journal'] = metadataDF['journal'].fillna(value='').apply(lambda x: ''.join(x))
 
     # If an article has no abstract, consider it valid
+    metadataDF['validForPrediction'] = 1 # All articles start off as valid
     metadataDF.loc[(metadataDF['abstract'].isnull()), 'validForPrediction'] = 1
  
     # Remove tags from abstract
@@ -75,33 +74,9 @@ def dataPreprocessing(metadataDF):
     logger.info("Missing language imputation completed")
     logger.info(f"After imputation, there are {metadataDF[metadataDF['language'] != 'en'].shape[0]} non-English articles in total excluded from the prediction pipeline.")
 
-    print(metadataDF.head())
-    '''
-    keep_col = ['DOI', 'URL', 'gddid', 'valid_for_prediction', 'title_clean', 'subtitle_clean', 'abstract_clean',
-                'subject_clean', 'journal', 'author', 'text_with_abstract',
-                'is-referenced-by-count', 'has_abstract', 'language', 'published', 'publisher',
-                'queryinfo_min_date',
-                'queryinfo_max_date',
-                'queryinfo_term',
-                'queryinfo_n_recent']
-    
-    metadataDF = metadataDF.loc[:, keep_col]
-
-    metadataDF = metadataDF.rename(columns={'title_clean': 'title',
-                                'subtitle_clean': 'subtitle',
-                                'abstract_clean': 'abstract'})
-    
-    # invalid when required input field is Null
-    mask = metadataDF[['text_with_abstract', 'subject_clean', 'is-referenced-by-count', 'has_abstract']].isnull().any(axis=1)
-    metadataDF.loc[mask, 'valid_for_prediction'] = 0
-
-    mask_text = (metadataDF['text_with_abstract'].str.strip() == '')
-    metadataDF.loc[mask_text, 'valid_for_prediction'] = 0
-
-    with_missing_df = metadataDF.loc[mask, :]
-    logger.info(f'{with_missing_df.shape[0]} articles has missing feature and its relevance cannot be predicted.')
-    logger.info(f'Data preprocessing completed.')
-
+    metadataDF.loc[(metadataDF['language']!= 'en'), 'validForPrediction'] = 0
+    metadataDF.loc[(metadataDF['titleSubtitleAbstract'].isnull()), 'validForPrediction'] = 0
+    metadataDF.loc[(metadataDF['subject'].isnull()), 'validForPrediction'] = 0
+    metadataDF.loc[(metadataDF['is-referenced-by-count'].isnull()), 'validForPrediction'] = 0
     
     return metadataDF
-    '''

@@ -1,12 +1,7 @@
 import pandas as pd
-import pyarrow.parquet as pq
-import os
 import re
 from logs import get_logger
 import requests
-import json
-from datetime import date
-from article_relevance import loadPQ
 
 logger = get_logger(__name__)
 
