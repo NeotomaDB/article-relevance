@@ -4,19 +4,18 @@ import pandas as pd
 
 # Load the article elements from AWS
 df = ar.loadPQ(AWS=True)
-print(df.columns)
 
-# query GDD
+# query GDD - returns only new observations
 gdd_df = ar.gddQuery(df = df, n_recent_articles = 50)
-print(gdd_df.head(3))
 
-# query with crossref only for new articles where the abstract or other info is not existent.
+# Query new observations to crossref
 crossRefDict = ar.crossRefQuery(gdd_df['DOI'])
-crossRefdf=pd.DataFrame(crossRefDict)
-print(crossRefdf.head(4))
+crossRefdf = pd.DataFrame(crossRefDict)
+print(crossRefdf['abstract'].head(4))
 print(crossRefdf.columns)
 
-# apply the model to predict if belongs to neotoma or not
+# Process data from crossRefDict
+processedData = ar.dataPreprocessing(crossRefdf)
 
 # append new df to parquet file
 

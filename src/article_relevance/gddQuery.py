@@ -116,5 +116,9 @@ def gddQuery(df = None,
     else:
         logger.info(f'Querying all')
         result_df = gdd_df.copy()
-
+    
+    result_df['queryinfo_min_date'] = min_date
+    result_df['queryinfo_max_date'] = max_date
+    result_df['queryinfo_n_recent'] = n_recent_articles
+    result_df['queryinfo_term'] = term
     return result_df
