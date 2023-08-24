@@ -6,7 +6,7 @@ import pandas as pd
 df = ar.loadPQ(AWS=True)
 
 # query GDD - returns only new observations
-gdd_df = ar.gddQuery(df = df, n_recent_articles = 350)
+gdd_df = ar.gddQuery(df = df, n_recent_articles = 10)
 
 # Query new observations to crossref
 crossRefDict = ar.crossRefQuery(gdd_df['DOI'])
@@ -19,11 +19,6 @@ processedData = ar.dataPreprocessing(crossRefdf)
 # Embed data
 embeddedData = ar.addEmbeddings(processedData, 'titleSubtitleAbstract')
 embeddedData.to_csv('output_file_test.csv')
-
-#Intermediate step just to gain all the needed columns:
-
-embeddedData = embeddedData.merge(processedData, how = 'inner')
-print(embeddedData.columns)
 
 # Predict data
 predictionsDF = ar.relevancePredict(embeddedData, AWS = True)

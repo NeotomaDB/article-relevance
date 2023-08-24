@@ -69,12 +69,12 @@ def relevancePredict(processedDF,
     validDF.loc[(validDF['predict_proba']< predictThld), 'prediction'] = 0
 
     # Filter results, store key information that could possibly be useful downstream
-    validDF = validDF[['title', 'subtitle', 'abstract', 'journal',
-                    'DOI', 'gddid', 'URL', 'validForPrediction',
+    validDF = validDF[['title', 'subtitle', 'abstract',
+                    'DOI', 'URL', 'validForPrediction',
                     'predict_proba', 'prediction',  'author', 
-                    'language', 'published', 'publisher',
-                    'queryinfo_min_date', 'queryinfo_max_date',
-                    'queryinfo_term', 'queryinfo_n_recent']]
+                    'language', 'published', 'publisher']]
+    
+    # desireable to keep from other df
     
     # Join it with invalid df to get back to the full dataframe
     result = pd.concat([validDF, invalidDF])
