@@ -26,12 +26,17 @@ def predToPQ(input_df,
         pd DataFrame with prediction and predict_proba added.
     """
     if AWS == True:
+
+        ## Todo: if inplace, true, then append the new df to the old one. If false, create a new file in AWS with a timestamp
+
+        parquet_buffer = BytesIO()
+        table = pa.Table.from_pandas(input_df)
+        pq.write_table(table, parquet_buffer)
+
         s3 = boto3.client('s3')   
         bucket_name = 'metareview' #load this as env variables
         object_key = 'article-relevance-output-all_00_trial_up.parquet' #load this as env variables
 
-        parquet_buffer = BytesIO()
-        input_df.to_parquet(parquet_buffer, engine='pyarrow')
         parquet_buffer.seek(0)
         s3.upload_fileobj(parquet_buffer, bucket_name, object_key)
     
@@ -58,8 +63,8 @@ def predToPQ(input_df,
 
     # ===== log important information ======
     logger.info(f'Total number of DOI processed: {input_df.shape[0]}')
-    logger.info(f"Number of valid articles: {input_df.query('valid_for_prediction == 1').shape[0]}")
-    logger.info(f"Number of invalid articles: {input_df.query('valid_for_prediction != 1').shape[0]}")
+    logger.info(f"Number of valid articles: {input_df.query('validForPrediction == 1').shape[0]}")
+    logger.info(f"Number of invalid articles: {input_df.query('validForPrediction != 1').shape[0]}")
     logger.info(f"Number of relevant articles: {input_df.query('prediction == 1').shape[0]}")
 
     return None

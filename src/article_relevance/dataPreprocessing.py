@@ -77,6 +77,7 @@ def dataPreprocessing(metadataDF):
     metadataDF.loc[(metadataDF['language']!= 'en'), 'validForPrediction'] = 0
     metadataDF.loc[(metadataDF['titleSubtitleAbstract'].isnull()), 'validForPrediction'] = 0
     metadataDF.loc[(metadataDF['subject'].isnull()), 'validForPrediction'] = 0
-    metadataDF.loc[(metadataDF['is-referenced-by-count'].isnull()), 'validForPrediction'] = 0
-    
+
+    ## Remove all of this with new training
+    # ['journal', 'gddid', 'queryinfo_min_date', 'queryinfo_max_date', 'queryinfo_term', 'queryinfo_n_recent']
     return metadataDF

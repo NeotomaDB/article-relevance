@@ -20,12 +20,14 @@ processedData = ar.dataPreprocessing(crossRefdf)
 embeddedData = ar.addEmbeddings(processedData, 'titleSubtitleAbstract')
 embeddedData.to_csv('output_file_test.csv')
 
-## Trial to see if i can upload parquet file
-ar.predToPQ(embeddedData.head(3), AWS = True)
+#Intermediate step just to gain all the needed columns:
+
+embeddedData = embeddedData.merge(processedData, how = 'inner')
+print(embeddedData.columns)
 
 # Predict data
-#predictionsDF = ar.relevancePredict(embeddedData, AWS = True)
+predictionsDF = ar.relevancePredict(embeddedData, AWS = True)
 # append new df to parquet file
 
 # Upload to parquet file
-
+ar.predToPQ(predictionsDF.head(3), AWS = True)
