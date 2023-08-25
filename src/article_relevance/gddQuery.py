@@ -1,6 +1,6 @@
 import pandas as pd
 import re
-from logs import get_logger
+from src.logs import get_logger
 import requests
 
 logger = get_logger(__name__)

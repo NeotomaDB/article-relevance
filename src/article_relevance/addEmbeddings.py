@@ -1,5 +1,5 @@
 import pandas as pd
-from logs import get_logger
+from src.logs import get_logger
 from sentence_transformers import SentenceTransformer
 
 logger = get_logger(__name__)

@@ -2,7 +2,7 @@ import pandas as pd
 import joblib
 import boto3
 from io import BytesIO
-from logs import get_logger
+from src.logs import get_logger
 
 logger = get_logger(__name__)
 
@@ -35,7 +35,7 @@ def relevancePredict(processedDF,
 
     else:
         if modelPath == None:
-            raise ValueError("When AWS is False, a path for teh model must be provided")  
+            raise ValueError("When AWS is False, a path for the model must be provided")  
         try:
         # load model
             model_object = joblib.load(modelPath)
@@ -43,7 +43,6 @@ def relevancePredict(processedDF,
             logger.error("Model for article relevance not found.")
             raise(FileNotFoundError)
 
-    print(processedDF.head(5))
     # split by valid for prediction
     validDF = processedDF.query('validForPrediction == 1')
     invalidDF = processedDF.query('validForPrediction != 1')
