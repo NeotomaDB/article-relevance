@@ -1,13 +1,15 @@
 import requests
+import pandas as pd
 import warnings
 from datetime import datetime
 
 ## Todo add environ variable to use email
 def crossRefQuery(doi_list):
+    doi_list = [str(element).lower() for element in doi_list]
     crossRefDict = list()
-    keysToKeep = {'DOI', 'URL', 'abstract', 'author','container-title',
-        'is-referenced-by-count', 'language', 'published', 'publisher', 
-        'subject', 'subtitle', 'title'}
+    keysToKeep = ['DOI', 'title', 'subtitle', 'author', 'subject', 
+                  'abstract', 'container-title', 'language', 
+                  'published', 'publisher',  'URL']
     for doi in list(set(doi_list)):
         url = f"https://api.crossref.org/works/{doi}"
         try:
@@ -21,4 +23,7 @@ def crossRefQuery(doi_list):
         except requests.exceptions.RequestException as e:
             warning_msg = f"DOI {doi} not found in CrossRef"
             warnings.warn(warning_msg, category=Warning)
-    return crossRefDict
+    crossRefDF = pd.DataFrame(crossRefDict)
+
+
+    return crossRefDF

@@ -1,5 +1,6 @@
 from .enHelper import enHelper
 from src.logs import get_logger
+import numpy as np
 
 logger = get_logger(__name__)
 
@@ -18,15 +19,12 @@ def dataPreprocessing(metadataDF):
     """
 
     logger.info(f'Prediction data preprocessing begin.')
-
-    colToUse = ['subtitle', 'author', 'is-referenced-by-count', 'DOI',
-       'container-title', 'language', 'URL', 'published', 'publisher', 'title',
-       'abstract', 'subject', 'CrossRefQueryDate']
     
-    metadataDF = metadataDF[colToUse]
-
     # Clean text in Subject
     metadataDF['subject'] = metadataDF['subject'].fillna(value='').apply(lambda x: ' '.join(x))
+
+    # Clean text in Journal
+    metadataDF['container-title'] = metadataDF['container-title'].fillna(value='').apply(lambda x: ' '.join(x))
 
     # Clean text in title, subtitle, abstract
     metadataDF['title'] = metadataDF['title'].fillna(value='').apply(lambda x: ''.join(x))
@@ -34,8 +32,7 @@ def dataPreprocessing(metadataDF):
 
     # If an article has no abstract, consider it valid
     metadataDF['validForPrediction'] = 1 # All articles start off as valid
-    metadataDF.loc[(metadataDF['abstract'].isnull()), 'validForPrediction'] = 1
- 
+    
     # Remove tags from abstract
     metadataDF['abstract'] = metadataDF['abstract'].fillna(value='').apply(lambda x: ''.join(x))
     metadataDF['abstract'] = metadataDF['abstract'].str.replace(pat = '<(jats|/jats):(p|sec|title|italic|sup|sub)>', repl = ' ', regex=True)
@@ -43,6 +40,7 @@ def dataPreprocessing(metadataDF):
 
     # Concatenate descriptive text
     metadataDF['titleSubtitleAbstract'] =  metadataDF['title'] + ' ' + metadataDF['subtitle'] + ' ' + metadataDF['abstract']
+    metadataDF['titleSubtitleAbstract'] = metadataDF['titleSubtitleAbstract'].str.lower()
 
     # Impute missing language
     logger.info(f'Running article language imputation.')
@@ -78,6 +76,7 @@ def dataPreprocessing(metadataDF):
     metadataDF.loc[(metadataDF['titleSubtitleAbstract'].isnull()), 'validForPrediction'] = 0
     metadataDF.loc[(metadataDF['subject'].isnull()), 'validForPrediction'] = 0
 
-    ## Remove all of this with new training
-    # ['journal', 'gddid', 'queryinfo_min_date', 'queryinfo_max_date', 'queryinfo_term', 'queryinfo_n_recent']
+    # Convert author column to np.array
+    metadataDF['author'] = metadataDF['author'].apply(lambda x: np.array([x]))
+
     return metadataDF

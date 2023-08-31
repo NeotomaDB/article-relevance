@@ -9,12 +9,10 @@ df = ar.loadPQ(AWS=True)
 gdd_df = ar.gddQuery(df = df, n_recent_articles = 10)
 
 # Query new observations to crossref
-crossRefDict = ar.crossRefQuery(gdd_df['DOI'])
-crossRefdf = pd.DataFrame(crossRefDict)
-print(crossRefdf.shape)
+crossRefDF = ar.crossRefQuery(gdd_df['DOI'])
 
 # Process data from crossRefDict
-processedData = ar.dataPreprocessing(crossRefdf)
+processedData = ar.dataPreprocessing(crossRefDF)
 
 # Embed data
 embeddedData = ar.addEmbeddings(processedData, 'titleSubtitleAbstract')
@@ -23,6 +21,9 @@ embeddedData.to_csv('output_file_test.csv')
 # Predict data
 predictionsDF = ar.relevancePredict(embeddedData, AWS = True)
 # append new df to parquet file
+
+# TODO
+# The information from GDD might be relevant - explore if any part is needed?
 
 # Upload to parquet file
 ar.predToPQ(predictionsDF.head(3), AWS = True)

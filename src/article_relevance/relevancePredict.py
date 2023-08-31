@@ -3,6 +3,7 @@ import joblib
 import boto3
 from io import BytesIO
 from src.logs import get_logger
+from datetime import datetime
 
 logger = get_logger(__name__)
 
@@ -32,6 +33,7 @@ def relevancePredict(processedDF,
         response = s3.get_object(Bucket=bucket_name, Key=object_key)
         content = response['Body'].read()     
         model_object = joblib.load(BytesIO(content))
+        model_name = object_key
 
     else:
         if modelPath == None:
@@ -66,17 +68,23 @@ def relevancePredict(processedDF,
     validDF.loc[:, 'predict_proba'] = model_object.predict_proba(validDF)[:, 1]
     validDF.loc[(validDF['predict_proba']>= predictThld), 'prediction'] = 1
     validDF.loc[(validDF['predict_proba']< predictThld), 'prediction'] = 0
+    
+    # Use 
+    validDF.loc['prediction_date'] = datetime.now()
 
     # Filter results, store key information that could possibly be useful downstream
     validDF = validDF[['title', 'subtitle', 'abstract',
                     'DOI', 'URL', 'validForPrediction',
                     'predict_proba', 'prediction',  'author', 
-                    'language', 'published', 'publisher']]
+                    'language', 'published', 'publisher', 'titleSubtitleAbstract']]
     
+    model_name = modelPath
     # desireable to keep from other df
     
     # Join it with invalid df to get back to the full dataframe
     result = pd.concat([validDF, invalidDF])
+    result['model_metadata'] = model_name
+    
 
     logger.info(f'Prediction completed.')
 
