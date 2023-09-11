@@ -1,3 +1,4 @@
+# File to predict using the given models and PQ data
 #load the parquet file
 import article_relevance as ar
 import pandas as pd

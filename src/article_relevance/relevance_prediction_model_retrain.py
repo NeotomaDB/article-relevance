@@ -224,6 +224,7 @@ def model_train(train_df, model_dir, model_c = 0.01563028103558011):
 
     binary_feature = ['has_abstract']
     binary_transformer = OneHotEncoder(drop='if_binary', dtype = int)
+  
 
     numeric_features = ["is-referenced-by-count"]
     numeric_transformer = StandardScaler()

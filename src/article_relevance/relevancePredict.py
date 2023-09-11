@@ -70,19 +70,20 @@ def relevancePredict(processedDF,
     validDF.loc[(validDF['predict_proba']< predictThld), 'prediction'] = 0
     
     # Use 
-    validDF.loc['prediction_date'] = datetime.now()
+    validDF['prediction_date'] = datetime.now()
 
     # Filter results, store key information that could possibly be useful downstream
     validDF = validDF[['title', 'subtitle', 'abstract',
                     'DOI', 'URL', 'validForPrediction',
                     'predict_proba', 'prediction',  'author', 
-                    'language', 'published', 'publisher', 'titleSubtitleAbstract']]
+                    'language', 'published', 'publisher', 'titleSubtitleAbstract', 'prediction_date']]
     
     model_name = modelPath
     # desireable to keep from other df
     
     # Join it with invalid df to get back to the full dataframe
     result = pd.concat([validDF, invalidDF])
+    result = result.reset_index()
     result['model_metadata'] = model_name
     
 
