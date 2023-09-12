@@ -2,7 +2,7 @@ import pandas as pd
 import joblib
 import boto3
 from io import BytesIO
-from src.logs import get_logger
+from .logs import get_logger
 from datetime import datetime
 
 logger = get_logger(__name__)

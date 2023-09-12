@@ -1,5 +1,5 @@
 from .enHelper import enHelper
-from src.logs import get_logger
+from .logs import get_logger
 import numpy as np
 import pandas as pd
 
@@ -22,29 +22,33 @@ def dataPreprocessing(metadataDF):
     logger.info(f'Prediction data preprocessing begin.')
     
     # Clean text in Subject
+    #### This will be done in the pipeline
     #metadataDF['subject'] = metadataDF['subject'].fillna(value=''). apply(lambda x: ' '.join(x))
-    subjectWide = pd.get_dummies(metadataDF['subject'].apply(pd.Series).stack())
-    subjectWide = subjectWide.groupby(level=0).sum().iloc[:, 1:]
-    subjectWide = subjectWide.groupby(subjectWide.columns, axis=1).sum()
-    print('dup subjects')
-    print(subjectWide.columns[subjectWide.columns.duplicated()])
-    metadataDF = metadataDF.drop(columns='subject')
+    # subjectWide = pd.get_dummies(metadataDF['subject'].apply(pd.Series).stack())
+    # subjectWide = subjectWide.groupby(level=0).sum().iloc[:, 1:]
+    # subjectWide = subjectWide.groupby(subjectWide.columns, axis=1).sum()
+    # print('dup subjects')
+    # print(subjectWide.columns[subjectWide.columns.duplicated()])
+    # metadataDF = metadataDF.drop(columns='subject')
 
     # Reappend the subject
-    metadataDF = pd.concat([metadataDF, subjectWide], axis=1)
+    #metadataDF = pd.concat([metadataDF, subjectWide], axis=1)
+    #### This will be done in the pipeline
 
     # Clean text in Journal
-    #metadataDF['container-title'] = metadataDF['container-title'].fillna(value='').apply(lambda x: ' '.join(x))
-    journalWide = pd.get_dummies(metadataDF['container-title'].apply(pd.Series).stack())
-    journalWide = journalWide.groupby(level=0).sum().iloc[:, 1:]
-    journalWide = journalWide.groupby(journalWide.columns, axis=1).sum()
-    print('dup journals')
-    print(journalWide.columns[journalWide.columns.duplicated()])
+    #### This will be done in the pipeline
+    # #metadataDF['container-title'] = metadataDF['container-title'].fillna(value='').apply(lambda x: ' '.join(x))
+    # journalWide = pd.get_dummies(metadataDF['container-title'].apply(pd.Series).stack())
+    # journalWide = journalWide.groupby(level=0).sum().iloc[:, 1:]
+    # journalWide = journalWide.groupby(journalWide.columns, axis=1).sum()
+    # print('dup journals')
+    # print(journalWide.columns[journalWide.columns.duplicated()])
+    #### This will be done in the pipeline
 
-    metadataDF = metadataDF.drop(columns='container-title')
+    #metadataDF = metadataDF.drop(columns='container-title')
 
     # Reappend the journal
-    metadataDF = pd.concat([metadataDF, journalWide], axis=1)
+    #metadataDF = pd.concat([metadataDF, journalWide], axis=1)
 
     # Clean text in title, subtitle, abstract
     metadataDF['title'] = metadataDF['title'].fillna(value='').apply(lambda x: ''.join(x))

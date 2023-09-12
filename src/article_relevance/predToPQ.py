@@ -4,7 +4,7 @@ import pyarrow.parquet as pq
 import datetime
 import boto3
 from io import BytesIO
-from src.logs import get_logger
+from .logs import get_logger
 
 logger = get_logger(__name__)
 
