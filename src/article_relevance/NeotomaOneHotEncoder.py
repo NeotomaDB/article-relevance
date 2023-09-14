@@ -1,44 +1,46 @@
 import pandas as pd
+import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.preprocessing import OneHotEncoder
 
 class NeotomaOneHotEncoder(BaseEstimator, TransformerMixin):
-    def __init__(self, column_name, threshold=5):
-        self.column_name = column_name
-        self.threshold = threshold
-        self.encoder = OneHotEncoder(handle_unknown='ignore')  # Handle unknown categories
+    def __init__(self, min_count=3):
+        self.min_count = min_count
+        self.categories = {}
 
     def fit(self, X, y=None):
-        # Fit the encoder on the specified column
-        self.encoder.fit(X[self.column_name].apply(pd.Series).stack())
+        # Take subjects that appear more than n times
+        for col in X.columns:
+            value_counts = X[col].apply(pd.Series).stack().value_counts()
+            self.categories[col] = value_counts[value_counts >= self.min_count].index.tolist()
         return self
 
     def transform(self, X):
-        # Use the fitted encoder to transform the specified column
-        dummies = self.encoder.transform(X[self.column_name].apply(pd.Series).stack())
-        
-        # Convert to a DataFrame and set column names
-        dummies_df = pd.DataFrame(dummies, columns=self.encoder.get_feature_names_out([self.column_name]))
-        
-        # Group by index and sum the one-hot encoded columns
-        dummies_df = dummies_df.groupby(level=0).sum()
-        
-        # Check if subject counts are below the threshold
-        subject_counts = X[self.column_name].apply(lambda x: x if x in dummies_df.columns else 'Other')
-        subject_counts = subject_counts.value_counts()
-        subjects_below_threshold = subject_counts[subject_counts < self.threshold].index.tolist()
-        
-        # Create an 'Other' column and populate it with 1 for subjects below the threshold
-        other_column_name = self.column_name + "_other"
-        dummies_df[other_column_name] = 0
-        for subject in subjects_below_threshold:
-            dummies_df[other_column_name] += dummies_df[subject]
-            dummies_df = dummies_df.drop(columns=[subject])
-        
-        # Concatenate the one-hot encoded columns with the original DataFrame
-        result_df = pd.concat([X, dummies_df], axis=1)
-        
-        # Drop the original column
-        result_df = result_df.drop(columns=[self.column_name])
-        
-        return result_df
+        transformed_dfs = []
+        for col in self.categories:
+            categories = self.categories.get(col, [])
+
+            # Ensure that all categories from the fit phase are present in the transform phase
+            # for category in self.categories[col]:
+            #     if category not in X[col].apply(pd.Series).stack().unique():
+            #         X[category] = 0
+            
+            # Leave the categories that exist and convert them to a stack
+            transformed_df = pd.get_dummies(X[col].apply(pd.Series).stack())
+
+            # If there is a category (say 'math') that has created a new column in 
+            # self.encoder but that 'math' does not exist in the new df, build it and
+            # encode with 0s
+            for category in categories:
+                if category not in transformed_df.columns:
+                    transformed_df[category] = 0
+
+            # Any NaN, encode to 0
+            transformed_df = transformed_df.groupby(level=0).max().fillna(0)
+            
+            # Change 'true/false' to int
+            transformed_df = transformed_df.astype(int)
+            transformed_df = transformed_df[categories]
+
+            transformed_dfs.append(transformed_df)
+
+        return pd.concat(transformed_dfs, axis=1)
