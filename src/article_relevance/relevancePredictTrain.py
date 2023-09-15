@@ -1,125 +1,168 @@
-#relevancePredictTrain
-# I will not split here - we will have some CV happening just for reporting purposes. We can use a testing portion to simply use .predict(X_test) and then do the metrics elswhere
-from .addEmbeddings import addEmbeddings
-#from NeotomaOneHotEncoder import NeotomaOneHotEncoderTransformer
-from sklearn.model_selection import RandomizedSearchCV
-from sentence_transformers import SentenceTransformer
+from .NeotomaOneHotEncoder import NeotomaOneHotEncoder
 
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import make_pipeline
+
+from sklearn.impute import SimpleImputer
+import nltk
+from nltk.corpus import stopwords
+from sklearn.feature_extraction.text import CountVectorizer
+
+from sklearn.linear_model import LogisticRegression 
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.naive_bayes import BernoulliNB
+from sklearn.model_selection import RandomizedSearchCV
+
+from sklearn.metrics import make_scorer, recall_score, f1_score, precision_score, accuracy_score
 
 import joblib
+from datetime import datetime
 
-from docopt import docopt
-import json
+classifiers = [
+        (LogisticRegression(max_iter=1000), {
+            'C': [0.001, 0.01, 0.1, 1, 10],
+            'max_iter': [100, 1000, 10000],
+            'penalty': ['l2']
+        #  'solver': ['liblinear', 'lbfgs']
+        }),
+        (DecisionTreeClassifier(class_weight="balanced"), {
+            'max_depth': range(10, 100, 10)
+        }),
+        (KNeighborsClassifier(weights='uniform', algorithm='auto'), {
+            'n_neighbors': range(5, 100, 10)
+        }),
+        (BernoulliNB(binarize=0.0), {
+            'alpha': [0.001, 0.01, 0.1, 1.0]
+        }),
+        (RandomForestClassifier(), {
+            'n_estimators': [50, 100, 200],
+            'max_depth': [None, 10, 20, 30]
+        })
+    ]
 
-import numpy as np
-import pandas as pd
-import datetime
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.model_selection import train_test_split
-from sklearn.pipeline import make_pipeline
-from sklearn.linear_model import LogisticRegression 
-from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from sklearn.metrics import roc_curve
-import matplotlib.pyplot as plt
-from sklearn.metrics import confusion_matrix
+def relevancePredictTrain(X_train, y_train, classifiers = classifiers):
+    """
+    X_train
+    y_train
+    classifiers (list of tuples)    List of tuples with the classifiers to try and their param grids
+    """
 
-###
-from transformers import AutoModel, AutoTokenizer
-from sklearn.base import BaseEstimator, TransformerMixin
-import torch
-from sklearn.pipeline import Pipeline
-from transformers import AutoAdapterModel
+    # Making sure X_train contains only required columns
+    selected_columns = [col for col in X_train.columns if col.startswith('embedding_')]
+    selected_columns = selected_columns + ['subject', 'container-title']
+    selected_columns.sort(key=lambda col: (col != 'subject') & (col != 'container-title'))
 
-class TransformersEmbedding(BaseEstimator, TransformerMixin):
-    def __init__(self, pooling_strategy="mean"):
-        self.model_name = 'allenai/specter2'
-        self.pooling_strategy = pooling_strategy
-        self.tokenizer = AutoTokenizer.from_pretrained("allenai/specter2_base")
-        self.model = AutoModel.from_pretrained("allenai/specter2_base")
-        self.model.load_adapter("allenai/specter2", source="hf", load_as="specter2", set_active=True)
+    X_train = X_train[selected_columns]
 
-        #adapter_name = model.load_adapter("allenai/specter2", source="hf", set_active=True)
+    # Processing of Elements that need fit-transform
+    print("Setting up features")
+    subFeature = ['subject', 'container-title']
+    subTransformer = NeotomaOneHotEncoder(min_count=10)
 
-    def fit(self, X, y=None):
-        # This transformer doesn't need to learn anything, so fit is a no-op
-        return self
+    # Load the NLTK English stopwords
+    nltk_stopwords = stopwords.words('english')
 
-    def transform(self, X):
-        # Tokenize input texts
-        encoded_input = self.tokenizer(X['titleSubtitleAbstract'].tolist(), return_tensors="pt", padding=True, truncation=True, max_length=512)
-        
-        # Generate embeddings
-        with torch.no_grad():
-            outputs = self.model(**encoded_input)
-            embeddings = outputs.last_hidden_state
+    # Add 'journal' to the stopwords list
+    custom_stopwords = nltk_stopwords + ['book', 'journal', 'magazine']
 
-            # Apply pooling strategy (e.g., mean pooling)
-            if self.pooling_strategy == "mean":
-                embeddings = torch.mean(embeddings, dim=1)
+    strFeature = 'container-title'
 
-        return embeddings.numpy()
-
-####
-
-def relevancePredictTrain(publicationDF, annotationDF):
-    embeddedDF = addEmbeddings(publicationDF, 'titleSubtitleAbstract') #make it pull really the BT model
-    completeData = embeddedDF.merge(annotationDF, on = 'DOI')
-
-    completeData.loc[(completeData['annotation']!= 'Neotoma'), 'target'] = 0
-    completeData.loc[(completeData['annotation']== 'Neotoma'), 'target'] = 1
-
-    X = completeData.drop(columns=['DOI', 'title', 'subtitle', 'author', 'abstract',
-       'language',  'URL', 'published', 'CrossRefQueryDate', 'validForPrediction', 
-       'target', 'annotation', 'annotator', 'annotationDate', 'index'])
-    y = completeData['target']
+    strTransformer = CountVectorizer(stop_words=custom_stopwords,
+                                 max_features = 100)
     
-    strFeature = ['publisher']
-    strTransformer = OneHotEncoder(sparse_output=False, handle_unknown='ignore', drop='first')
-
-    embedFeature = ['titleSubtitleAbstract']
-    embeddingModel = TransformersEmbedding()
-
-
     preprocessor = ColumnTransformer(
         transformers = [
             ("str_preprocessor", strTransformer, strFeature),
-            #("embedding_preprocessor", embeddingModel, embedFeature)
+            ('neotoma_encoder', subTransformer, subFeature),  
         ],
         remainder = "passthrough"
     )
-
-    logistic_regression = LogisticRegression()
-
-    logreg_model = make_pipeline(preprocessor, 
-                                 logistic_regression)
-    
-    param_grid = {
-    'logisticregression__C': [0.001, 0.01, 0.1, 1, 10],
-    'logisticregression__max_iter': [100, 1000, 10000],
-    'logisticregression__penalty': ['l1', 'l2'],
-    'logisticregression__solver': ['liblinear', 'lbfgs']
+    # Define the metrics you want to capture
+    classification_metrics = {
+        'recall': make_scorer(recall_score),
+        'f1': make_scorer(f1_score),
+        'precision': make_scorer(precision_score),
+        'accuracy': make_scorer(accuracy_score)
     }
     
-    # Create a randomized search with cross-validation
-    randomized_search = RandomizedSearchCV(
-        logreg_model, 
-        param_distributions=param_grid,
-        n_iter=10, 
-        cv=5,
-        random_state=42,  # Random seed for reproducibility
-        return_train_score=True, error_score='raise'
-    )
-
-    randomized_search.fit(X,y)
-
-    best_pipeline = randomized_search.best_estimator_
-    best_params = randomized_search.best_params_
-    print(best_params)
-
-
-    return best_pipeline
-
-
-
+    resultsDict = {'classifier': [],'Fit Time': [], 'train_recall': [], 'train_f1' : [],
+                   'train_precision': [], 'train_accuracy': [], 'test_recall' : [],
+                   'test_f1': [], 'test_precision': [], 'test_accuracy': []}
     
+    megaDictionary = {'model_name': [], 'model': [], 'report': [], 'date': []}
+
+    print("Beginning training")
+    for classifier, param_grid in classifiers:
+        classifier_name = str(type(classifier).__name__).lower()
+        print(f"Training {classifier_name}.")
+
+        # Define the preprocessing pipeline
+        pipeline = make_pipeline(
+            preprocessor,
+            SimpleImputer(strategy='constant', fill_value=0), # In case there's NaNs
+            classifier
+        )
+
+        param_grid = {f"{classifier_name}__{key}": value for key, value in param_grid.items()}
+
+        randomized_search = RandomizedSearchCV(
+                                estimator=pipeline,
+                                param_distributions=param_grid,
+                                scoring=classification_metrics,
+                                cv=5,
+                                n_iter=10,
+                                random_state=123,
+                                n_jobs=-1,
+                                refit='recall',
+                                return_train_score=True
+                            )
+
+        starttime = datetime.now()
+        timestamp = starttime.strftime("%Y-%m-%d_%H-%M-%S")
+        print(f'Starting fit at {timestamp}')
+
+        randomized_search.fit(X_train, y_train)
+
+        fit_time = datetime.now() - starttime
+
+        best_classifier = randomized_search.best_estimator_
+        
+        joblib.dump(best_classifier, f"models/{classifier_name}_{timestamp}.joblib")
+        
+        best_scores_train = {
+            metric: randomized_search.cv_results_[f"mean_train_{metric}"][randomized_search.best_index_]
+            for metric in classification_metrics
+        }
+
+        best_scores_test = {
+            metric: randomized_search.cv_results_[f"mean_test_{metric}"][randomized_search.best_index_]
+            for metric in classification_metrics
+        }
+
+        classifier_name = str(type(classifier).__name__)
+        resultsDict['classifier'].append(classifier_name)
+        resultsDict['Fit Time'].append(fit_time)
+        
+        resultsDict['train_accuracy'].append(best_scores_train['accuracy'])
+        resultsDict['train_precision'].append(best_scores_train['precision'])
+        resultsDict['train_recall'].append(best_scores_train['recall'])
+        resultsDict['train_f1'].append(best_scores_train['f1'])
+        
+        resultsDict['test_accuracy'].append(best_scores_test['accuracy'])
+        resultsDict['test_precision'].append(best_scores_test['precision'])
+        resultsDict['test_recall'].append(best_scores_test['recall'])
+        resultsDict['test_f1'].append(best_scores_test['f1'])
+        
+        megaDictionary['model_name'].append(classifier_name)
+        megaDictionary['model'].append(best_classifier)
+    
+    megaDictionary['report'].append(resultsDict)
+    megaDictionary['date'].append(datetime.now())
+
+    joblib.dump(megaDictionary, f"results/Iteration_{timestamp}.joblib")
+    
+    print("finished process; returning results")
+
+    return megaDictionary

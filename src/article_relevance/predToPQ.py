@@ -1,6 +1,7 @@
 import os
 import pyarrow as pa
 import pyarrow.parquet as pq
+import pandas as pd
 import datetime
 import boto3
 from io import BytesIO
@@ -10,16 +11,17 @@ logger = get_logger(__name__)
 
 def predToPQ(input_df, 
              AWS = True,
+             object_key =  'article-relevance-output-all_00_trial_up.parquet',
              inplace = True,
              parquetPath = None):
     """
-    Make prediction on article relevancy. 
-    Add prediction and predict_proba to the resulting dataframe.
+    Store prediction on article relevance in a parquet file. 
+    Add prediction and predict_proba to predictionsDF
     Save resulting dataframe with all information in output_path directory.
     Return the resulting dataframe.
 
     Args:
-        input_df (pd DataFrame): Input data frame. 
+        input_df (pd DataFrame): Input data frame to save as PQ. 
         model_path (str): Directory to trained model object.
 
     Returns:
@@ -34,11 +36,23 @@ def predToPQ(input_df,
         pq.write_table(table, parquet_buffer)
 
         s3 = boto3.client('s3')   
-        bucket_name = 'metareview' #load this as env variables
-        object_key = 'article-relevance-output-all_00_trial_up.parquet' #load this as env variables
+        bucket_name = 'metareview'
+        object_key = object_key
 
         parquet_buffer.seek(0)
-        s3.upload_fileobj(parquet_buffer, bucket_name, object_key)
+        if inplace == True:
+            # Read the existing data from S3 if it exists
+            try:
+                existing_data = pd.read_parquet(f's3://{bucket_name}/{object_key}')
+                combined_data = pd.concat([existing_data, input_df], ignore_index=True)
+                pq_buffer = BytesIO()
+                table = pa.Table.from_pandas(combined_data)
+                pq.write_table(table, pq_buffer)
+                pq_buffer.seek(0)
+                s3.upload_fileobj(pq_buffer, bucket_name, object_key)
+            except:
+                # If the file doesn't exist, simply upload the new data
+                s3.upload_fileobj(parquet_buffer, bucket_name, object_key)
     
     else:
         if parquetPath == None:

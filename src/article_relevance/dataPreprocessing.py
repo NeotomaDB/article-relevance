@@ -1,7 +1,5 @@
 from .enHelper import enHelper
 from .logs import get_logger
-import numpy as np
-import pandas as pd
 
 logger = get_logger(__name__)
 
@@ -19,37 +17,8 @@ def dataPreprocessing(metadataDF):
         pd DataFrame containing all info required for model prediction.
     """
 
-    logger.info(f'Prediction data preprocessing begin.')
+    logger.info(f'Data cleaning and parsing begins.')
     
-    # Clean text in Subject
-    #### This will be done in the pipeline
-    #metadataDF['subject'] = metadataDF['subject'].fillna(value=''). apply(lambda x: ' '.join(x))
-    # subjectWide = pd.get_dummies(metadataDF['subject'].apply(pd.Series).stack())
-    # subjectWide = subjectWide.groupby(level=0).sum().iloc[:, 1:]
-    # subjectWide = subjectWide.groupby(subjectWide.columns, axis=1).sum()
-    # print('dup subjects')
-    # print(subjectWide.columns[subjectWide.columns.duplicated()])
-    # metadataDF = metadataDF.drop(columns='subject')
-
-    # Reappend the subject
-    #metadataDF = pd.concat([metadataDF, subjectWide], axis=1)
-    #### This will be done in the pipeline
-
-    # Clean text in Journal
-    #### This will be done in the pipeline
-    # #metadataDF['container-title'] = metadataDF['container-title'].fillna(value='').apply(lambda x: ' '.join(x))
-    # journalWide = pd.get_dummies(metadataDF['container-title'].apply(pd.Series).stack())
-    # journalWide = journalWide.groupby(level=0).sum().iloc[:, 1:]
-    # journalWide = journalWide.groupby(journalWide.columns, axis=1).sum()
-    # print('dup journals')
-    # print(journalWide.columns[journalWide.columns.duplicated()])
-    #### This will be done in the pipeline
-
-    #metadataDF = metadataDF.drop(columns='container-title')
-
-    # Reappend the journal
-    #metadataDF = pd.concat([metadataDF, journalWide], axis=1)
-
     # Clean text in title, subtitle, abstract
     metadataDF['title'] = metadataDF['title'].fillna(value='').apply(lambda x: ''.join(x))
     metadataDF['subtitle'] = metadataDF['subtitle'].fillna(value='').apply(lambda x: ''.join(x))
@@ -71,21 +40,23 @@ def dataPreprocessing(metadataDF):
 
     metadataDF['language'] = metadataDF['language'].fillna(value = '')
     metadataDF['titleSubtitleAbstract'] = metadataDF['titleSubtitleAbstract'].fillna(value = '')
+    metadataDF['titleSubtitleAbstract'] = metadataDF['titleSubtitleAbstract'].str.lower()
 
-    # impute only when there are > 5 characters for langdetect to impute accurately
+    # Impute only when there are > 5 characters for langdetect to impute accurately
     imputeCondition = (metadataDF['language'].str.len() == 0) & \
-                            (metadataDF['titleSubtitleAbstract'].str.contains('[a-zA-Z]', regex=True)) & \
-                            (metadataDF['titleSubtitleAbstract'].str.len() >= 5)
+                      (metadataDF['titleSubtitleAbstract'].str.contains('[a-zA-Z]', regex=True)) & \
+                      (metadataDF['titleSubtitleAbstract'].str.len() >= 5)
     
-    cannot_impute_condition = (metadataDF['language'].str.len() == 0) & \
-                               ~((metadataDF['titleSubtitleAbstract'].str.contains('[a-zA-Z]', regex=True)) & \
-                              (metadataDF['titleSubtitleAbstract'].str.len() >= 5))
+    cannotImputeCondition = (metadataDF['language'].str.len() == 0) & \
+                            ~((metadataDF['titleSubtitleAbstract'].str.contains('[a-zA-Z]', regex=True)) & \
+                            (metadataDF['titleSubtitleAbstract'].str.len() >= 5))
 
     # Record info
-    n_missing_lang = sum(metadataDF['language'].str.len() == 0)
-    logger.info(f'{n_missing_lang} articles require language imputation')
-    n_cannot_impute = sum(cannot_impute_condition)
-    logger.info(f'{n_cannot_impute} cannot be imputed due to too short text metadata(title, subtitle and abstract less than 5 character).')
+    nMissingLanguage = sum(metadataDF['language'].str.len() == 0)
+    logger.info(f'{nMissingLanguage} articles require language imputation')
+
+    nCannotImpute = sum(cannotImputeCondition)
+    logger.info(f'{nCannotImpute} cannot be imputed due to too short text metadata (title, subtitle and abstract are less than 5 characters).')
 
     # Apply imputation
     metadataDF.loc[imputeCondition,'language'] = metadataDF.loc[imputeCondition, 'titleSubtitleAbstract'].apply(lambda x: enHelper(x))
@@ -103,9 +74,13 @@ def dataPreprocessing(metadataDF):
     metadataDF['author'] = metadataDF['author'].apply(str)
     metadataDF['published'] = metadataDF['published'].apply(str)
 
-    print('dup cols')
-    print(metadataDF.columns[metadataDF.columns.duplicated()])
+    # Convert journal list to string:
+    metadataDF['container-title'] = metadataDF['container-title'].fillna(value='').apply(lambda x: ''.join(x))
 
     metadataDF = metadataDF.groupby(metadataDF.columns, axis=1).sum()
+
+    #metadataDF = metadataDF[metadataDF['validForPrediction'] == 1]
+
+    logger.info(f"Data Preprocessing Completed. {metadataDF.shape[0]} valid observations.")
 
     return metadataDF

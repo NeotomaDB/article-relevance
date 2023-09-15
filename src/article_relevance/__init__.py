@@ -1,4 +1,4 @@
-from .logs import get_logger
+#from .logs import get_logger
 from .loadPQ import loadPQ
 from .gddQuery import gddQuery
 from .crossRefQuery import crossRefQuery

@@ -1,8 +1,10 @@
 from langdetect import detect
 
 def enHelper(value):
-    ''' Helper function for en_only. 
-    Apply row-wise to impute missing language data.'''
+    """
+    Helper function to identify English observations. 
+    Apply row-wise to impute missing language.
+    """
      
     try:
         detect_lang = detect(value)

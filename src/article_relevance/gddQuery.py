@@ -1,7 +1,7 @@
 import pandas as pd
 import re
-from .logs import get_logger
 import requests
+from .logs import get_logger
 
 logger = get_logger(__name__)
 
@@ -10,13 +10,36 @@ def gddQuery(df = None,
              min_date = None, 
              max_date = None, 
              term = None,
-             auto_check_dup = True):   
+             auto_check_dup = True): 
+    """ 
+    Get newly acquired articles from min_date to (optional) max_date. 
+    Or get the most recent new articles added to GeoDeepDive.
+    Return API resuls as a list of article metadata information.
+
+    Args:
+        df (pd.DataFrame)       Existing pd.DataFrame parquet to extract DOIs
+        n_recent_articles (int) Number of most recent articles GeoDeepDive acquired.
+        min_date (str)          Lower limit of GeoDeepDive acquired date.
+        max_date (str)          Upper limit of GeoDeepDive acquired date.
+        term (str)              Term to search for.
+        auto_check_dup          Check parquet file to avoid duplication. Set up to True
     
+    Return:
+        pd.DataFrame with new DOIs
+
+    Example:
+        get_new_gdd_articles(min_date='2023-06-07')
+        get_new_gdd_articles(min_date='2023-06-01', max_date = '2023-06-08')
+        get_new_gdd_articles(n_recent_articles = 1000)
+    """
+  
     # ======== Tests for input data type ==========
     if (n_recent_articles is None) and (min_date is None and max_date is None):
             raise ValueError("Either n_recent_articles or a date range should be specified.")
+    
     if (n_recent_articles is not None) and (min_date is not None or max_date is not None):
             raise ValueError("Only one of n_recent_articles or a date range should be specified.")
+    
     if (n_recent_articles is None) and (min_date is not None or max_date is not None):
             pattern = r'^\d{4}-\d{2}-\d{2}$'
             if min_date is not None:
@@ -29,13 +52,16 @@ def gddQuery(df = None,
                      raise ValueError("min_date should be a string. min_date should be a string with format 'yyyy-mm-dd'.")
                 if re.match(pattern, max_date) is False:
                      raise ValueError("min_date does not follow the correct format. min_date should be a string with format 'yyyy-mm-dd'.")        
+    
     if (n_recent_articles is not None) and (min_date is None and max_date is None):
          if not isinstance(n_recent_articles, int):
                 raise ValueError("n_recent_articles should be an integer.")         
+    
     # ========== Query API ==========
     if n_recent_articles is not None:
         logger.info(f'Querying by n_recent = {n_recent_articles}')
         api_call = "https://geodeepdive.org/api/articles?recent" + f"&max={n_recent_articles}"
+    
     # Query API by date range
     elif (min_date is not None) and (max_date is not None):
         logger.info(f'Querying by min_date = {min_date} and max_date = {max_date}')
@@ -48,21 +74,26 @@ def gddQuery(df = None,
         api_call = f"https://xdd.wisc.edu/api/articles?max_acquired={max_date}&full_results=true"
     else:
         raise ValueError("Please check input parameter values.")
+    
     if term is not None:
         logger.info(f'Search term = {term}.')
         api_extend = f"&term={term}"
         api_call += api_extend
+    
     # =========== Query xDD API to get data ==========
     session = requests.Session()
     response = session.get(api_call)
     n_refresh = 0
+    
     while response.status_code != 200 and n_refresh < 10:
         response = requests.get(api_call)
         n_refresh += 1
     response_dict = response.json()
     data = response_dict['success']['data']
     i = 1
+    
     logger.info(f'{len(data)} articles queried from GeoDeepDive (page {i}).')
+    
     if 'next_page' in response_dict['success'].keys():
         next_page = response_dict['success']['next_page']
         n_refresh = 0
@@ -78,9 +109,11 @@ def gddQuery(df = None,
             data.extend(new_data)
             next_page = next_response_dict['success']['next_page']
             n_refresh += 1
+    
     logger.info(f'GeoDeepDive query completed.')
+    
     # ========= Convert gdd data to dataframe =========
-    # initialize the resulting dataframe
+
     gdd_df = pd.DataFrame()
     for article in data:
         one_article_dict = {}
@@ -99,11 +132,10 @@ def gddQuery(df = None,
     # # ========== Get list of existing gddids from the parquet files =========
     if auto_check_dup == True:
         if not isinstance(df, pd.DataFrame)  or 'gddid' not in df.columns:
-             raise KeyError('A data frame with gddids must be provided to check for duplicates')
+             raise KeyError('A data frame with gddids must be provided to check for duplicates. If you do not have a data frame, set up auto_check_dup to False')
         gddids = df['gddid'].unique().tolist()
 
         ## Filter from gdd_df all the values that already exist in the parquet:
-
         result_df = gdd_df[~gdd_df['gddid'].isin(gddids)]
     
         logger.info(f'{result_df.shape[0]} articles are new addition for relevance prediction.')
@@ -116,4 +148,7 @@ def gddQuery(df = None,
     result_df['queryinfo_max_date'] = max_date
     result_df['queryinfo_n_recent'] = n_recent_articles
     result_df['queryinfo_term'] = term
+    
+    logger.info(f'{result_df.columns} metadata for {results_df.shape[0]} articles saved.')
+
     return result_df
