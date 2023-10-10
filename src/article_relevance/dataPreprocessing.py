@@ -1,7 +1,13 @@
 from .enHelper import enHelper
 from .logs import get_logger
+import pandas as pd
 
 logger = get_logger(__name__)
+
+def replace_missing_with_empty_list(value):
+    if isinstance(value, list):
+        return value
+    return []
 
 def dataPreprocessing(metadataDF):
     """
@@ -37,6 +43,9 @@ def dataPreprocessing(metadataDF):
 
     # Impute missing language
     logger.info(f'Running article language imputation.')
+
+    # Missing subject
+    metadataDF['subject'] = metadataDF['subject'].apply(replace_missing_with_empty_list)
 
     metadataDF['language'] = metadataDF['language'].fillna(value = '')
     metadataDF['titleSubtitleAbstract'] = metadataDF['titleSubtitleAbstract'].fillna(value = '')
