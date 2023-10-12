@@ -4,7 +4,6 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import make_pipeline
 
 from sklearn.impute import SimpleImputer
-import nltk
 from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import CountVectorizer
 
@@ -51,7 +50,7 @@ def relevancePredictTrain(X_train, y_train, classifiers = classifiers):
 
     # Making sure X_train contains only required columns
     selected_columns = [col for col in X_train.columns if col.startswith('embedding_')]
-    selected_columns = selected_columns + ['subject', 'container-title']
+    selected_columns = selected_columns + ['subject', 'container-title','DOI']
     selected_columns.sort(key=lambda col: (col != 'subject') & (col != 'container-title'))
 
     X_train = X_train[selected_columns]
@@ -74,6 +73,7 @@ def relevancePredictTrain(X_train, y_train, classifiers = classifiers):
     
     preprocessor = ColumnTransformer(
         transformers = [
+            ('DOI', 'drop', ['DOI']), # allow to keep the DOI but don't use it to train
             ("str_preprocessor", strTransformer, strFeature),
             ('neotoma_encoder', subTransformer, subFeature),  
         ],
