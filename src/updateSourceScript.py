@@ -6,6 +6,9 @@ import article_relevance as ar
 # Updates AWS S3 instance following objects:
 # Annotations.parquet & PublicationMetadata.parquet 
 
+# Example to run:
+# python3 src/updateSourceScript.py '/Users/sedv8808/Desktop/newDOIs.csv'
+
 def main():
     parser = argparse.ArgumentParser(description="Pass in a CSV file.")
     parser.add_argument("csv_file", help="Path to the CSV file")
