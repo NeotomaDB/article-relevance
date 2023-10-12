@@ -1,5 +1,6 @@
 import pandas as pd
-from crossRefQuery import crossRefQuery
+from .crossRefQuery import crossRefQuery
+from .dataPreprocessing import dataPreprocessing
 import pyarrow as pa
 import pyarrow.parquet as pq
 import boto3
@@ -27,7 +28,7 @@ def updateSource(csv_file, aws_keys=aws_keys):
                                      ignore_index=True)
 
     # Sort the combined data frame by DOI and Date
-    combined_annotations.sort_values(by=['DOI', 'Date'], ascending=[True, False], 
+    combined_annotations.sort_values(by=['DOI', 'annotationDate'], ascending=[True, False], 
                                      inplace=True)
 
     # Drop duplicates, keeping the first occurrence (which has the newest date)
@@ -39,9 +40,16 @@ def updateSource(csv_file, aws_keys=aws_keys):
     # Save the updated annotation.pq file
     pq_buffer = BytesIO()
     table = pa.Table.from_pandas(combined_annotations)
+    
+    # To Remove: Create an empty object in the specified location (key) in the S3 bucket 
+    s3.put_object(Bucket=aws_keys['bucket_name'], Key='trial_annotationupdate.parquet') #remove this line
     pq.write_table(table, pq_buffer)
+    #fastparquet.write(pq_buffer, table, compression='SNAPPY')
     pq_buffer.seek(0)
-    s3.upload_fileobj(pq_buffer, aws_keys['bucket_name'], aws_keys['annotation_key'])
+    
+    s3.upload_fileobj(pq_buffer, 
+                      Bucket = aws_keys['bucket_name'], 
+                      Key = aws_keys['annotation_key'])
     
     # Load publication.pq from ASW S3 instance
     response = s3.get_object(Bucket = aws_keys['bucket_name'], 
@@ -54,21 +62,34 @@ def updateSource(csv_file, aws_keys=aws_keys):
     annotation_dois = combined_annotations["DOI"]
     publication_dois = publication_df["DOI"]
     dois_to_fetch = annotation_dois[~annotation_dois.isin(publication_dois)].tolist()
+    print(f"New total DOIs: {len(dois_to_fetch)}")
 
     # Fetch data for DOIs that do not exist and append to metadata.pq
     neotomaCrossRef = crossRefQuery(dois_to_fetch)
+    neotomaCrossRef = dataPreprocessing(neotomaCrossRef)
 
     # Update publication_df
+    print("arrived here, let's try to concat")
+    publication_df['subject'] = publication_df['subject'].apply(lambda x: [x.decode('utf-8')]) 
     publication_df = pd.concat([publication_df, neotomaCrossRef], 
                                ignore_index=True)
 
     # Save the updated publication.pq file
     pq_buffer = BytesIO()
     table = pa.Table.from_pandas(publication_df)
-    pq.write_table(table, pq_buffer)
+    # Create an empty object in the specified location (key) in the S3 bucket
+    s3.put_object(Bucket=aws_keys['bucket_name'], Key='trial_metaupdate.parquet')
+    pq.write_table(table, pq_buffer, compression='snappy')
+    pq.write_table(table, pq_buffer, compression='snappy')
+    #fastparquet.write(pq_buffer, table, compression='SNAPPY')
     pq_buffer.seek(0)
     s3.upload_fileobj(pq_buffer, 
                       Bucket = aws_keys['bucket_name'], 
                       Key = aws_keys['publication_key'])
+    
+
+        # Save the updated annotation.pq file
+    pq_buffer = BytesIO()
+    table = pa.Table.from_pandas(combined_annotations)
 
     return "Successful Update!"
