@@ -17,7 +17,7 @@ def main():
     csv_file = args.csv_file
 
     try:
-        data = ar.updateSource(csv_file)
+        ar.updateSource(csv_file)
         return 
         
     except FileNotFoundError:

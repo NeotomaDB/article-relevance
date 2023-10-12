@@ -61,7 +61,7 @@ def updateSource(csv_file, aws_keys=aws_keys):
     # Compare DOI columns //publication vs annotationDOI column//
     annotation_dois = combined_annotations["DOI"]
     publication_dois = publication_df["DOI"]
-    dois_to_fetch = annotation_dois[~annotation_dois.isin(publication_dois)].tolist()
+    dois_to_fetch = annotation_dois[~annotation_dois.isin(publication_dois)].unique().tolist()
     print(f"New total DOIs: {len(dois_to_fetch)}")
 
     # Fetch data for DOIs that do not exist and append to metadata.pq
@@ -69,7 +69,6 @@ def updateSource(csv_file, aws_keys=aws_keys):
     neotomaCrossRef = dataPreprocessing(neotomaCrossRef)
 
     # Update publication_df
-    print("arrived here, let's try to concat")
     publication_df['subject'] = publication_df['subject'].apply(lambda x: [x.decode('utf-8')]) 
     publication_df = pd.concat([publication_df, neotomaCrossRef], 
                                ignore_index=True)
