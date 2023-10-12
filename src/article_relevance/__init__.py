@@ -8,3 +8,4 @@ from .relevancePredict import relevancePredict
 from .relevancePredictTrain import relevancePredictTrain
 from .predToPQ import predToPQ
 from .NeotomaOneHotEncoder import NeotomaOneHotEncoder
+from .updateSource import updateSource
