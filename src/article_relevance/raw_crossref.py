@@ -1,11 +1,13 @@
 """_Management of CrossRef inputs and outputs._
 """
 
+from itertools import chain
 import json
 from datetime import datetime
 import unicodedata
 import boto3
 import requests
+import re
 from botocore.exceptions import ClientError
 
 def pull_crossref(doi):
@@ -42,19 +44,34 @@ def raw_crossref(doi_list, metadata_bucket, verbose = False):
         pandas Dataframe containing CrossRef metadata.
     """
     s3 = boto3.client('s3')
+    # First find what DOIs we have in S3 as raw metadata:
+    doi_stores = []
+    doi_processed = []
+    paginator = s3.get_paginator('list_objects_v2')
+    pages = paginator.paginate(Bucket = metadata_bucket, Prefix='dois')
+    for page in pages:
+        # These are the DOIs that are already uploaded.
+        doi_stores.append([i['Key'] for i in page['Contents']])
+    recovered_dois = list(chain(*doi_stores))
     for doi in doi_list:
         # Look for a file, if it's not there then poll the CrossRef API
         # If the API returns a valid response then write out the JSON response
         # If the API does not return a valid response then return an empty object
-        print(doi)
         if doi is not None:
+            doi_processed.append(doi)
             doi = unicodedata.normalize('NFKD', doi).rstrip()
-            try:
-                aa = s3.head_object(Bucket=metadata_bucket, Key=f'dois/{doi}.json')
-            except Exception as ex:
+            newlist = [i for i in recovered_dois if i == 'dois/' + doi + '.json']
+            if len(newlist) == 0:
                 if verbose:
-                    print(f'{ex}')
+                    print('Upload')
+                    print('Polling CrossRef for object metadata.')
                 response_json = pull_crossref(doi)
-                aa = s3.put_object(Body=json.dumps(response_json),
+                if verbose:
+                    if response_json['status'] == 'failure':
+                        print(f'No findable DOI data for {doi}.')
+                    else:
+                        print(f'Recovered DOI metadata for {doi}.')
+                s3.put_object(Body=json.dumps(response_json),
                             Bucket = metadata_bucket,
                             Key = f'dois/{doi}.json')
+    return doi_processed
