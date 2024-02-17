@@ -1,6 +1,7 @@
 import warnings
 #import re
 from datetime import datetime
+import json
 import requests
 import pandas as pd
 from .s3_management import pull_s3, push_s3
@@ -27,12 +28,18 @@ def crossref_query(doi_store, metadata_store, verbose = False, check = False, cr
     Return:
         pandas Dataframe containing CrossRef metadata.
     """
-    dois = pull_s3(doi_store)
+    # First, pull the set of existing DOIs
+    doi_df = pull_s3(doi_store)
     # The function calls for DOIs and posts them in the S3 bucket as raw JSON.
-    raw_crossref(dois['doi'], doi_store['Bucket'])
+    # It is not importing the metadata into a dataframe. That happens later.
+    # It returns a list of DOIs that are in the S3 bucket.
+    attempt = raw_crossref(doi_df['doi'], doi_store['Bucket'])
+    if verbose:
+        print(f'Processed {len(attempt)} DOIs of the total {len(doi_df.index)} objects.')
     try:
         metadata = pull_s3(metadata_store)
     except ClientError as ex:
+        # Error is thrown if there is no current file in S3
         if ex.response['Error']['Code'] == 'NoSuchKey':
             if create:
                 metadata = pd.DataFrame({'doi': [],
@@ -47,11 +54,11 @@ def crossref_query(doi_store, metadata_store, verbose = False, check = False, cr
                                          'publisher': None,
                                          'url': None,
                                          'date': None})
-    print(f'{len(dois.index)} DOIs in the data store.')
-    checkers = [i for i in dois['doi'] if i not in metadata['doi']]
-    print(f'{len(checkers)} DOIs to be resolved.')
-    doi_list = [str(element).lower() for element in checkers]
-    crossref_dict = list()
+    if verbose:
+        print(f'{len(doi_df.index)} DOIs passed to the function.')
+    checkers = [i for i in attempt if i not in list(metadata['doi'])]
+    if verbose:
+        print(f'{len(checkers)} DOIs to be added to the metadata store.')
     good_keys = {'doi': '',
                  'title': [],
                  'subtitle': [],
@@ -64,11 +71,14 @@ def crossref_query(doi_store, metadata_store, verbose = False, check = False, cr
                  'publisher': '',
                  'url': '',
                  'valid': True}
-    for doi in doi_list:
+    s3 = boto3.client('s3')
+    for doi in checkers:
         try:
-            raw_crossref(doi_list, metadata_store.get('Bucket'))
+            doi_key = 'dois/' + doi + '.json'
+            result = s3.get_object(Bucket= metadata_store.get('Bucket'), Key= doi_key)
+            response = json.loads(result['Body'].read())
             # Convert all keys to lowercase and only keep the "good" keys.
-            response_json = {k.lower(): v for k, v in response_json['message'].items()}
+            response_json = {k.lower(): v for k, v in response['message'].items()}
             article_dict = {key: response_json.get(key, object) for key, object in good_keys.items()}
             article_dict['date'] = datetime.now()
             article_dict['valid'] = True
@@ -79,6 +89,8 @@ def crossref_query(doi_store, metadata_store, verbose = False, check = False, cr
             crossref_dict.append(article_dict)
             warning_msg = f"DOI {doi} not found in CrossRef. Exception: {e}"
             warnings.warn(warning_msg, category = Warning)
+        except Exception as e:
+            warnings.warn(e, category = Warning)
     cross_ref_df = pd.concat([pd.DataFrame(crossref_dict), metadata],
                              ignore_index = True).drop_duplicates(subset=['doi'])
     push_s3(metadata_store, cross_ref_df, create = True, check = False)
