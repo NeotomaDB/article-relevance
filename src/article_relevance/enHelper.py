@@ -5,7 +5,6 @@ def enHelper(value):
     Helper function to identify English observations. 
     Apply row-wise to impute missing language.
     """
-     
     try:
         detect_lang = detect(value)
     except:

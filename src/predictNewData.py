@@ -10,13 +10,13 @@ df = ar.loadPQ(AWS=True)
 gdd_df = ar.gddQuery(df = df, n_recent_articles = 10)
 
 # Query new observations to crossref
-crossRefDF = ar.crossRefQuery(gdd_df['DOI'])
+crossRefDF = ar.crossref_query(gdd_df['DOI'])
 
 # Process data from crossRefDict
-processedData = ar.dataPreprocessing(crossRefDF)
+processedData = ar.data_preprocessing(crossRefDF)
 
 # Embed data
-embeddedData = ar.addEmbeddings(processedData, 'titleSubtitleAbstract')
+embeddedData = ar.add_embeddings(processedData, 'titleSubtitleAbstract')
 embeddedData.to_csv('output_file_test.csv')
 
 # Predict data

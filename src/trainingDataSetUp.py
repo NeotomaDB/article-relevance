@@ -26,16 +26,16 @@ labeledDF['doi'] = labeledDF['doi'].str.lower()
 labeledDF = labeledDF.drop_duplicates(subset='doi', keep='first')
 
 # CrossRef Querying
-neotomaCrossRef = ar.crossRefQuery(neotoma['doi'].unique().tolist())
-pollenCrossRef =  ar.crossRefQuery(pollenDF['doi'].unique().tolist())
-labeledCrossRef = ar.crossRefQuery(pollenDF['doi'].unique().tolist())
+neotomaCrossRef = ar.crossref_query(neotoma['doi'].unique().tolist())
+pollenCrossRef =  ar.crossref_query(pollenDF['doi'].unique().tolist())
+labeledCrossRef = ar.crossref_query(pollenDF['doi'].unique().tolist())
 
 # Final DF
 df = pd.concat([neotomaCrossRef, pollenCrossRef, labeledCrossRef])
 df = df.reset_index(drop=True)
 
 # Basic Data Cleaning
-preprocessedDF = ar.dataPreprocessing(df)
+preprocessedDF = ar.data_preprocessing(df)
 
 # In trainingDataSetUp the file is saved to AWS
 print("Creating Publication Metadata Original Parquet")

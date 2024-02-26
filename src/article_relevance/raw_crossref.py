@@ -33,7 +33,7 @@ def pull_crossref(doi):
     return response_json
 
 
-def raw_crossref(doi_list, metadata_bucket, verbose = False):
+def raw_crossref(doi_list, metadata_store, verbose = False):
     """
     Extract raw Crossref JSON responses from the CrossRef API and push them to an S3 bucket
     If a DOI is not found on CrossRef, the DOI will be stored as a file with an empty JSON response.
@@ -48,7 +48,7 @@ def raw_crossref(doi_list, metadata_bucket, verbose = False):
     doi_stores = []
     doi_processed = []
     paginator = s3.get_paginator('list_objects_v2')
-    pages = paginator.paginate(Bucket = metadata_bucket, Prefix='dois')
+    pages = paginator.paginate(Bucket = metadata_store['Bucket'], Prefix='dois')
     for page in pages:
         # These are the DOIs that are already uploaded.
         doi_stores.append([i['Key'] for i in page['Contents']])

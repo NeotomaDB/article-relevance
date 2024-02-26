@@ -1,6 +1,6 @@
 import pandas as pd
-from .crossRefQuery import crossRefQuery
-from .dataPreprocessing import dataPreprocessing
+from .crossref_query import crossref_query
+from .data_preprocessing import data_preprocessing
 import pyarrow as pa
 import pyarrow.parquet as pq
 import boto3

@@ -14,7 +14,7 @@ annotationDF = pd.read_parquet('data/parquet/AnnotationDF.parquet')
 # Todo: Give user the choice if they want to use an embeddings file
 print("Creating Embeddings, please be patient")
 print(datetime.now())
-bigDF = ar.addEmbeddings(publicationDF, 'titleSubtitleAbstract')
+bigDF = ar.add_embeddings(publicationDF, 'titleSubtitleAbstract')
 print(datetime.now())
 
 selected_columns = [col for col in bigDF.columns if col.startswith("embedding_")]
@@ -45,5 +45,5 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 resultsDict = ar.relevancePredictTrain(X_train, y_train)
 
 ### Evaluating with the Test Set
-
-# Extract all models from the joblibs, apply X_test scoring metrics or something and then get the results
+# Extract all models from the joblibs, apply X_test 
+# scoring metrics or something and then get the results

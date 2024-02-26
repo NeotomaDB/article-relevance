@@ -75,7 +75,7 @@ def relevancePredictTrain(X_train, y_train, classifiers = classifiers):
         transformers = [
             ('DOI', 'drop', ['DOI']), # allow to keep the DOI but don't use it to train
             ("str_preprocessor", strTransformer, strFeature),
-            ('neotoma_encoder', subTransformer, subFeature),  
+            ('neotoma_encoder', subTransformer, subFeature), 
         ],
         remainder = "passthrough"
     )

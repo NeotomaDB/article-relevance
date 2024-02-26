@@ -7,11 +7,11 @@ from io import BytesIO
 def loadPQ(AWS = True, parquetPath=None):
     if AWS == True:
         extension = ".parquet"
-        s3 = boto3.client('s3')   
+        s3 = boto3.client('s3')  
         bucket_name = 'metareview' #load this as env variables
         object_key = 'article-relevance-output-all.parquet' #load this as env variables
         response = s3.get_object(Bucket=bucket_name, Key=object_key)
-        content = response['Body'].read()     
+        content = response['Body'].read()   
         df = pd.read_parquet(BytesIO(content))
     else:
         if parquetPath == None:

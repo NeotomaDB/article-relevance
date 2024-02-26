@@ -9,7 +9,7 @@ from .logs import get_logger
 
 logger = get_logger(__name__)
 
-def predToPQ(input_df, 
+def predToPQ(input_df,
              AWS = True,
              object_key =  'article-relevance-output-all_00_trial_up.parquet',
              inplace = True,
