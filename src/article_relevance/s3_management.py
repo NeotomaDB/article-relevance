@@ -4,6 +4,7 @@ import re
 import pandas as pd
 import boto3
 from botocore.exceptions import ClientError
+from .clean_dois import clean_dois
 from .logs import get_logger
 
 def push_s3(s3_object, pa_object, check = True, create = False):
@@ -68,8 +69,9 @@ def pull_s3(s3_object):
 
 def update_dois(s3_object, dois):
     df = pull_s3(s3_object)
+    # Is this the right dataframe format?
     if set([i for i in df.columns]) == set(['doi', 'date']):
-        valid_doi = [x for i, x in enumerate(list(set(dois))) if re.search(r'^10.\d{4,9}/[-._;()/:A-Z0-9]+$', x)]
+        valid_doi = clean_dois(dois).get('clean')
         new_doi = [x for i, x in enumerate(valid_doi) if x not in df['doi'].to_list()]
         print(f'{len(dois)} DOIs submitted.')
         print(f'{len(valid_doi)} DOIs valid.')
