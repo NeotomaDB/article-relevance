@@ -12,3 +12,4 @@ from .NeotomaOneHotEncoder import NeotomaOneHotEncoder
 from .updateSource import updateSource
 from .s3_management import pull_s3, push_s3, update_dois
 from .clean_dois import clean_dois
+from .add_labels import add_labels
