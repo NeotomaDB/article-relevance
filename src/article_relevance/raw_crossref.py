@@ -9,6 +9,7 @@ import boto3
 import requests
 import re
 from botocore.exceptions import ClientError
+import base64
 
 def pull_crossref(doi):
     """_Pull a record from the CrossRef API and return the unstructured JSON,_
@@ -43,6 +44,9 @@ def raw_crossref(doi_list, metadata_store, verbose = False):
     Return:
         pandas Dataframe containing CrossRef metadata.
     """
+    # First, generate a list of all valid DOIs and their associated b64 encoded file names.
+    # Second, for every DOI, check that is exists in the set of json files.
+    # Third, for those that don't exist, pull the CrossRef metadata.
     s3 = boto3.client('s3')
     # First find what DOIs we have in S3 as raw metadata:
     doi_stores = []
@@ -50,17 +54,25 @@ def raw_crossref(doi_list, metadata_store, verbose = False):
     paginator = s3.get_paginator('list_objects_v2')
     pages = paginator.paginate(Bucket = metadata_store['Bucket'], Prefix='dois')
     for page in pages:
+        if page.get('KeyCount') > 0:
         # These are the DOIs that are already uploaded.
-        doi_stores.append([i['Key'] for i in page['Contents']])
+            doi_stores.append([i.get('Key') for i in page.get('Contents')])
     recovered_dois = list(chain(*doi_stores))
-    for doi in doi_list:
+    print(f'DOI metadata exists for {len(recovered_dois)} records.')
+    to_process = [i
+                  for i in doi_list
+                  if 'dois/' + base64.urlsafe_b64encode(str.encode(i)).decode('utf-8') + '.json'
+                  not in recovered_dois]
+    print(f'Fetching DOI metadata for {len(to_process)} records.')
+    for doi in to_process:
         # Look for a file, if it's not there then poll the CrossRef API
         # If the API returns a valid response then write out the JSON response
         # If the API does not return a valid response then return an empty object
         if doi is not None:
             doi_processed.append(doi)
             doi = unicodedata.normalize('NFKD', doi).rstrip()
-            newlist = [i for i in recovered_dois if i == 'dois/' + doi + '.json']
+            filename = 'dois/' + base64.urlsafe_b64encode(str.encode(doi)).decode('utf-8') + '.json'
+            newlist = [i for i in recovered_dois if i == filename]
             if len(newlist) == 0:
                 if verbose:
                     print('Upload')
@@ -72,6 +84,6 @@ def raw_crossref(doi_list, metadata_store, verbose = False):
                     else:
                         print(f'Recovered DOI metadata for {doi}.')
                 s3.put_object(Body=json.dumps(response_json),
-                            Bucket = metadata_bucket,
-                            Key = f'dois/{doi}.json')
+                            Bucket = metadata_store['Bucket'],
+                            Key = filename)
     return doi_processed
