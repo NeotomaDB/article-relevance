@@ -26,7 +26,7 @@ class NeotomaOneHotEncoder(BaseEstimator, TransformerMixin):
                     X[category] = 0
 
             # Handling empty lists
-            X[col] = X[col].apply(lambda x: ['None'] if len(x) == 0 else x)
+            X.loc[:, col] = X[col].apply(lambda x: ['None'] if len(x) == 0 else x)
 
             # Leave the categories that exist and convert them to a stack
             transformed_df = pd.get_dummies(X[col].apply(pd.Series).stack())
