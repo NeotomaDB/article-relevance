@@ -6,6 +6,7 @@ class NeotomaOneHotEncoder(BaseEstimator, TransformerMixin):
     def __init__(self, min_count=3):
         self.min_count = min_count
         self.categories = {}
+        self.removed_rows = []
 
     def fit(self, X, y=None):
         # Take subjects that appear more than n times
@@ -20,10 +21,13 @@ class NeotomaOneHotEncoder(BaseEstimator, TransformerMixin):
             categories = self.categories.get(col, [])
 
             # Ensure that all categories from the fit phase are present in the transform phase
-            # for category in self.categories[col]:
-            #     if category not in X[col].apply(pd.Series).stack().unique():
-            #         X[category] = 0
-            
+            for category in self.categories[col]:
+                if category not in X[col].apply(pd.Series).stack().unique():
+                    X[category] = 0
+
+            # Replace empty lists with a list containing a single zero
+            X[col] = X[col].apply(lambda x: ['None'] if len(x) == 0 else x)
+
             # Leave the categories that exist and convert them to a stack
             transformed_df = pd.get_dummies(X[col].apply(pd.Series).stack())
 
@@ -43,4 +47,13 @@ class NeotomaOneHotEncoder(BaseEstimator, TransformerMixin):
 
             transformed_dfs.append(transformed_df)
 
-        return pd.concat(transformed_dfs, axis=1)
+            # Keep track of removed rows
+            removed_indices = set(X.index) - set(transformed_df.index)
+            self.removed_rows.extend(list(removed_indices))
+        
+        result = pd.concat(transformed_dfs, axis=1)
+        
+        if 'None' in result.columns:
+            result = result.drop(columns=['None'])
+        
+        return result
