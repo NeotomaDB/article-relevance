@@ -1,47 +1,14 @@
-from .NeotomaOneHotEncoder import NeotomaOneHotEncoder
-
-from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import make_pipeline
-
-from sklearn.impute import SimpleImputer
-from nltk.corpus import stopwords
-from sklearn.feature_extraction.text import CountVectorizer
-
-from sklearn.linear_model import LogisticRegression 
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.naive_bayes import BernoulliNB
-from sklearn.model_selection import RandomizedSearchCV
-
-from sklearn.metrics import make_scorer, recall_score, f1_score, precision_score, accuracy_score
-
 import joblib
 from datetime import datetime
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import make_pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.model_selection import RandomizedSearchCV
+from sklearn.metrics import make_scorer, recall_score, f1_score, precision_score, accuracy_score
 
-classifiers = [
-        (LogisticRegression(max_iter=1000), {
-            'C': [0.001, 0.01, 0.1, 1, 10],
-            'max_iter': [100, 1000, 10000],
-            'penalty': ['l2']
-        #  'solver': ['liblinear', 'lbfgs']
-        }),
-        (DecisionTreeClassifier(class_weight="balanced"), {
-            'max_depth': range(10, 100, 10)
-        }),
-        (KNeighborsClassifier(weights='uniform', algorithm='auto'), {
-            'n_neighbors': range(5, 100, 10)
-        }),
-        (BernoulliNB(binarize=0.0), {
-            'alpha': [0.001, 0.01, 0.1, 1.0]
-        }),
-        (RandomForestClassifier(), {
-            'n_estimators': [50, 100, 200],
-            'max_depth': [None, 10, 20, 30]
-        })
-    ]
+from .NeotomaOneHotEncoder import NeotomaOneHotEncoder
 
-def relevancePredictTrain(x_train, y_train, classifiers = classifiers):
+def relevancePredictTrain(x_train, y_train, classifiers):
     """
     x_train
     y_train
@@ -51,21 +18,16 @@ def relevancePredictTrain(x_train, y_train, classifiers = classifiers):
     # Making sure x_train contains only required columns
     selected_columns = [col for col in x_train.columns if col.startswith('embedding_')]
     selected_columns = selected_columns + ['subject', 'doi']
-    selected_columns.sort(key=lambda col: (col != 'subject'))
 
     x_train = x_train[selected_columns]
 
     # Processing of Elements that need fit-transform
     print("Setting up features")
     subFeature = ['subject']
-    subTransformer = NeotomaOneHotEncoder(min_count=10)
+    subTransformer = NeotomaOneHotEncoder(min_count=3)
+    neotoma_encoder = NeotomaOneHotEncoder(min_count=1)
+    X_encoded = neotoma_encoder.fit_transform(x_train[['subject']])
 
-    # Load the NLTK English stopwords
-    nltk_stopwords = stopwords.words('english')
-
-    # Add 'journal' to the stopwords list
-    custom_stopwords = nltk_stopwords + ['book', 'journal', 'magazine']
-    
     preprocessor = ColumnTransformer(
         transformers = [
             ('doi', 'drop', ['doi']), # allow to keep the DOI but don't use it to train
@@ -79,14 +41,15 @@ def relevancePredictTrain(x_train, y_train, classifiers = classifiers):
         'precision': make_scorer(precision_score),
         'accuracy': make_scorer(accuracy_score)
     }
-    
+
     resultsDict = {'classifier': [],'Fit Time': [], 'train_recall': [], 'train_f1' : [],
                    'train_precision': [], 'train_accuracy': [], 'test_recall' : [],
                    'test_f1': [], 'test_precision': [], 'test_accuracy': []}
-    
+
     megaDictionary = {'model_name': [], 'model': [], 'report': [], 'date': []}
 
     print("Beginning training")
+    #classifier, param_grid = classifiers[0]
     for classifier, param_grid in classifiers:
         classifier_name = str(type(classifier).__name__).lower()
         print(f"Training {classifier_name}.")
@@ -136,12 +99,12 @@ def relevancePredictTrain(x_train, y_train, classifiers = classifiers):
         resultsDict['test_f1'].append(best_scores_test['f1'])
         megaDictionary['model_name'].append(classifier_name)
         megaDictionary['model'].append(best_classifier)
-    
+
     megaDictionary['report'].append(resultsDict)
     megaDictionary['date'].append(datetime.now())
 
     joblib.dump(megaDictionary, f"results/Iteration_{timestamp}.joblib")
-    
+
     print("finished process; returning results")
 
     return megaDictionary
