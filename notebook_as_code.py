@@ -78,25 +78,14 @@ print(X_train.shape)
 print(X_encoded.shape)
 #removed_rows = neotoma_encoder.removed_rows
 #print(X_train.loc[removed_rows, :])
+# We want to run a set of different classifiers to determine the appropriate classification method:
 
-resultsDict = ar.relevancePredictTrain(X_train, y_train)
-
-from sklearn.linear_model import LogisticRegression 
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.naive_bayes import BernoulliNB
-from sklearn.model_selection import RandomizedSearchCV
-
-from sklearn.metrics import make_scorer, recall_score, f1_score, precision_score, accuracy_score
-
-# Plus identify the classifiers from skLearn
 classifiers = [
     (LogisticRegression(max_iter=1000), {
         'C': [0.001, 0.01, 0.1, 1, 10],
         'max_iter': [100, 1000, 10000],
-        'penalty': ['l2']
-    #  'solver': ['liblinear', 'lbfgs']
+        'penalty': ['l2'],
+        'solver': ['liblinear', 'lbfgs']
     }),
     (DecisionTreeClassifier(class_weight="balanced"), {
         'max_depth': range(10, 100, 10)
@@ -113,4 +102,4 @@ classifiers = [
     })
 ]
 
-ar.relevancePredictTrain(embeddings_train, embeddings_notrain)
+resultsDict = ar.relevancePredictTrain(x_train = X_train, y_train = y_train, classifiers = classifiers)
