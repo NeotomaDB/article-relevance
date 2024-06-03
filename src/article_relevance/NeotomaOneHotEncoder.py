@@ -19,7 +19,6 @@ class NeotomaOneHotEncoder(BaseEstimator, TransformerMixin):
         transformed_dfs = []
         for col in self.categories:
             categories = self.categories.get(col, [])
-
             # Ensure that all categories from the fit phase are present in the transform phase
             for category in self.categories[col]:
                 if category not in X[col].apply(pd.Series).stack().unique():
@@ -30,7 +29,6 @@ class NeotomaOneHotEncoder(BaseEstimator, TransformerMixin):
 
             # Leave the categories that exist and convert them to a stack
             transformed_df = pd.get_dummies(X[col].apply(pd.Series).stack())
-
             # If there is a category (say 'math') that has created a new column in 
             # self.encoder but that 'math' does not exist in the new df, build it and
             # encode with 0s

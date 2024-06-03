@@ -41,6 +41,7 @@ def data_preprocessing(metadata_store):
     valid_data.loc[impute_condition,'language'] = valid_data.loc[impute_condition, 'titleSubtitleAbstract'].apply(lambda x: enHelper(x))
     # Set valid_for_prediction col to 0 if cannot be imputed or detected language is not English
     valid_data.loc[(valid_data['language'] != 'en'), 'valid'] = False
+    valid_data.loc[valid_data['subject'].apply(len) == 0, 'valid'] = False
     # Convert journal list to string:
     valid_data.loc[:,'container-title'] = [': '.join(i) for i in valid_data['container-title']]
     # What does this do?
