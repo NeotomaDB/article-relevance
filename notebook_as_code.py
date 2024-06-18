@@ -9,6 +9,7 @@ METADATA_STORE = {'Bucket':os.environ['S3_BUCKET'],'Key':'metadata_store.parquet
 EMBEDDING_STORE = {'Bucket':os.environ['S3_BUCKET'],'Key':'embedding_store.parquet'}
 PREDICTION_STORE = {'Bucket':os.environ['S3_BUCKET'],'Key':'prediction_store.parquet'}
 LABELLING_STORE =  {'Bucket':os.environ['S3_BUCKET'],'Key':'labelling_store.parquet'}
+API_HOME = os.environ['API_HOME']
 
 import pandas as pd
 from datetime import datetime
@@ -18,6 +19,10 @@ label_data = pd.read_csv('data/raw/labelled_data.csv')
 
 all_doi = set(db_data['doi'].tolist() + label_data['doi'].tolist())
 doi_set = ar.clean_dois(all_doi)
+
+ar.add_dois(doi_set)
+
+
 
 doi_output = ar.update_dois(s3_object = DOI_STORE, dois = doi_set['clean'], create = True)
 
@@ -64,6 +69,11 @@ data_model = data_model.merge(labels, on = ['doi'], how = 'right')
 data_model = data_model.loc[data_model['valid'] == True].drop(['valid','date'], axis = 1)
 
 from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression 
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.naive_bayes import BernoulliNB
+from sklearn.ensemble import RandomForestClassifier
 
 #data_model = data_model[data_model['subject'] != []]
 
@@ -86,7 +96,7 @@ classifiers = [
         'max_iter': [100, 1000, 10000],
         'penalty': ['l2'],
         'solver': ['liblinear', 'lbfgs']
-    }),
+    })]
     (DecisionTreeClassifier(class_weight="balanced"), {
         'max_depth': range(10, 100, 10)
     }),
@@ -103,3 +113,7 @@ classifiers = [
 ]
 
 resultsDict = ar.relevancePredictTrain(x_train = X_train, y_train = y_train, classifiers = classifiers)
+
+with open('results.json', 'w', encoding='UTF-8') as f:
+    json.dump(resultsDict['report'], f, indent=4, sort_keys=True, default=str)
+
