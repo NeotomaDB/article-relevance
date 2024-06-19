@@ -5,7 +5,10 @@ import pandas as pd
 from .clean_dois import clean_dois
 from .logs import get_logger
 from .raw_crossref import pull_crossref
-import requests 
+import requests
+from requests.exceptions import ReadTimeout
+import os
+import json
 
 def add_dois(dois):
     """_Insert each unique DOI. Do not replace existing DOIs._
@@ -15,7 +18,8 @@ def add_dois(dois):
 
     Returns:
         _obj_: _An object with proerties `submitted` and `rejected`._
-    """    
+    """
+
     valid_doi = clean_dois(dois).get('clean')
     if len(valid_doi) == 0:
         print("No valid DOIs in the submitted set of values.")
@@ -26,11 +30,19 @@ def add_dois(dois):
         bodydata = [{'doi': i} for i in valid_doi]
         badapi = []
         for i in bodydata:
-            outcome = requests.post('http://' + API_HOME + '/doi',
-                        data = {'data': json.dumps(i)},
-                        timeout = 10)
-            if outcome.status_code == 500:
+            try:
+                outcome = requests.post('http://' + os.environ['API_HOME'] + '/doi',
+                            data = {'data': json.dumps(i)},
+                            timeout = 10)
+            except ReadTimeout as e:
+                print(f'Connection failed for DOI {i}:')
+                print(e)
                 badapi.append(i)
+            except Exception as e:
+                badapi.append(i)
+                print(f'Connection failed for DOI {i}:')
+                print(e)
+
     return {'submitted': dois,
             'rejected': badapi}
 
