@@ -20,8 +20,7 @@ label_data = pd.read_csv('data/raw/labelled_data.csv')
 all_doi = set(db_data['doi'].tolist() + label_data['doi'].tolist())
 doi_set = ar.clean_dois(all_doi)
 
-ar.add_dois(doi_set)
-
+ar.add_dois(all_doi)
 
 
 doi_output = ar.update_dois(s3_object = DOI_STORE, dois = doi_set['clean'], create = True)
