@@ -10,6 +10,7 @@ from requests.exceptions import ReadTimeout
 import os
 import json
 
+
 def add_dois(dois):
     """_Insert each unique DOI. Do not replace existing DOIs._
 
@@ -29,11 +30,15 @@ def add_dois(dois):
         print(f'{len(valid_doi)} DOIs valid.')
         bodydata = [{'doi': i} for i in valid_doi]
         badapi = []
+        goodapi = []
+        
         for i in bodydata:
             try:
                 outcome = requests.post('http://' + os.environ['API_HOME'] + '/doi',
-                            data = {'data': json.dumps(i)},
+                            data = {'data': [json.dumps(i)]},
                             timeout = 10)
+                if outcome.content.get('data', 0) != 0:
+                    goodapi.append(i)
             except ReadTimeout as e:
                 print(f'Connection failed for DOI {i}:')
                 print(e)
@@ -42,35 +47,9 @@ def add_dois(dois):
                 badapi.append(i)
                 print(f'Connection failed for DOI {i}:')
                 print(e)
+    dois = [i for i in bodydata if i['doi'] not in [j['doi'] for j in badapi]]
 
-    return {'submitted': dois,
-            'rejected': badapi}
+    return {'submitted': bodydata,
+            'rejected': badapi,
+            'inserted': goodapi}
 
-def add_metadata():
-    outcome = requests.get('http://' + API_HOME + '/doi',
-                        timeout = 10)
-    if outcome.status_code == 200:
-        doi_store = json.loads(outcome.content).get('message')
-        for i in doi_store:
-            if i.get('metadata') == 0:
-                cr = pull_crossref(i.get('doi'))
-                if cr.get('status') == 'ok':
-                    cr_data = cr.get('message')
-                    good_keys = {'DOI': '',
-                        'title': [],
-                        'subtitle': [],
-                        'author': [],
-                        'subject': [],
-                        'abstract': '',
-                        'container-title': [],
-                        'language': '',
-                        'published': {},
-                        'publisher': '',
-                        'URL': '',
-                        'valid': True}
-                    article_dict = {key.lower(): cr_data.get(key, object) for key, object in good_keys.items()}
-                    
-                    outcome = requests.post('http://' + API_HOME + '/doi',
-                        data = {'data': json.dumps(cr)},
-                        timeout = 10)
-                    
