@@ -21,10 +21,10 @@ def pull_crossref(doi):
     """
     try:
         response = requests.get(f"https://api.crossref.org/works/{doi}",
-                                        timeout = (10,10),
-                                        headers = {
-                    'User-Agent': 'Neotoma Publication Checker [https://github.com/NeotomaDB/article-relevance]',
-                    'From': 'goring@wisc.edu'})
+                                            timeout = (10,10),
+                                            headers = {
+                        'User-Agent': 'Neotoma Publication Checker [https://github.com/NeotomaDB/article-relevance]',
+                        'From': 'goring@wisc.edu'})
         response_json = response.json()
     except Exception as e:
         response_json = {'status': 'failure',
