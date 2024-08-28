@@ -22,18 +22,12 @@ doi_set = ar.clean_dois(all_doi)
 
 check = ar.add_dois(all_doi)
 
-
-doi_output = ar.update_dois(s3_object = DOI_STORE, dois = doi_set['clean'], create = True)
-
-print(f'A total of {len(db_data.index) + len(label_data.index)} DOIs were submitted.')
-print(f'Of those objects there were {len(all_doi)} unique DOIs.')
-print(f'There were {len(doi_set.get("clean"))} unique and valid DOIs.')
-
 new_dois = ['10.1590/s0102-69922012000200010', '10.1090/S0002-9939-2012-11404-2', '10.1063/1.4742131', '10.1007/s13355-012-0130-x']
 
-aa = ar.update_dois(s3_object = DOI_STORE, dois = new_dois)
-metadata = ar.crossref_query(DOI_STORE, METADATA_STORE, create = True)
-processed_data = ar.data_preprocessing(METADATA_STORE)
+check = ar.add_dois(new_dois)
+embedding_pubs = ar.get_pub_for_embedding(model = 'allenai/specter2_base')
+
+processed_data = ar.data_preprocessing(embedding_pubs)
 
 embeddings = ar.add_embeddings(processed_data, 'titleSubtitleAbstract', embedding_store = EMBEDDING_STORE)
 

@@ -53,3 +53,12 @@ def add_dois(dois):
             'rejected': badapi,
             'inserted': goodapi}
 
+def get_pub_for_embedding(model = 'allenai/specter2_base'):
+    outcome = requests.get('http://' + os.environ['API_HOME'] + '/doi/toembed',
+                           params = {'embeddingmodel': model},
+                            timeout = 10)
+    if outcome.status_code == 200:
+        pubrecords = json.loads(outcome.content).get('message')
+    else:
+        return None
+    return pubrecords

@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 
 #logger = get_logger(__name__)
 
-def data_preprocessing(metadata_store):
+def data_preprocessing(metadata):
     """
     Clean up title, subtitle, abstract, subject.
     Feature engineer for descriptive text column.
@@ -20,23 +20,23 @@ def data_preprocessing(metadata_store):
         pd DataFrame containing all info required for model prediction.
     """
     tokenizer = AutoTokenizer.from_pretrained('allenai/specter2_base')
-    
-    metadata = pull_s3(metadata_store)
-    valid_data = metadata[metadata['valid'] == True]
+
     # Join arrays:
-    valid_data.loc[:,'title'] = [' '.join(i) for i in valid_data['title']]
-    valid_data.loc[:,'subtitle'] = [' '.join(i) for i in valid_data['subtitle']]
-    text_batch = [(d.get('title') or '').lower() + tokenizer.sep_token + (d.get('subtitle') or '').lower() + 
-                  tokenizer.sep_token + 
-                  (d.get('abstract') or '').lower() for d in valid_data.to_dict('records')]
+    text_batch = [{'doi': d.get('doi'),
+                   'text': (d.get('title') or '').lower() + tokenizer.sep_token +
+                  (d.get('subtitle') or '').lower() + tokenizer.sep_token +
+                  (d.get('abstract') or '').lower(),
+                  'language': d.get('lang')} for d in metadata]
     # Remove HTML tags from abstract
-    clean_text = [BeautifulSoup(i, "lxml").text for i in text_batch]
-    # Concatenate descriptive text
-    valid_data.loc[:,'titleSubtitleAbstract'] = clean_text
+    clean_text = [{'doi': i.get('doi'), 
+                   'text': BeautifulSoup(i.get('text'), "lxml").text,
+                   'lang': i.get('lang)')} for i in text_batch]
+    
     # Impute only when there are > 5 characters for langdetect to impute accurately
-    impute_condition = (valid_data['language'].str.len() == 0) & \
-                       (valid_data['titleSubtitleAbstract'].str.contains('[a-zA-Z]', regex=True)) & \
-                       (valid_data['titleSubtitleAbstract'].str.len() >= 5)
+    clean_text.update('impute') = [(i.get('language') is None) &
+                                   (i.get('text') != '[SEP][SEP]') &
+                        (len(str(i.get('text') or ''))) for i in clean_text]
+    
     # Apply imputation
     valid_data.loc[impute_condition,'language'] = valid_data.loc[impute_condition, 'titleSubtitleAbstract'].apply(lambda x: enHelper(x))
     # Set valid_for_prediction col to 0 if cannot be imputed or detected language is not English
