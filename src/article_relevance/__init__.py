@@ -13,4 +13,4 @@ from .updateSource import updateSource
 from .s3_management import pull_s3, push_s3, update_dois
 from .clean_dois import clean_dois
 from .add_labels import add_labels
-from .api_calls import add_dois
+from .api_calls import add_dois, label_exists, embedding_exists, submit_embedding, get_pub_for_embedding, get_publication_metadata
