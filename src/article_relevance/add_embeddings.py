@@ -5,19 +5,19 @@ from itertools import chain
 import pandas as pd
 from transformers import AutoTokenizer
 from adapters import AutoAdapterModel
-from .s3_management import pull_s3, push_s3
+from .api_calls import submit_embedding, embedding_exists
 
-def add_embeddings(input_df, text_col,
-                   embedding_store,
+def add_embeddings(article_metadata, text_col,
                    model_name = 'allenai/specter2_base',
-                   adapter_name = 'allenai/specter2_classification',
-                   create = True):
+                   adapter_name = 'allenai/specter2_classification'):
     """
     Add sentence embeddings to the dataframe using the allenai/specter2 model. 
     Args:
-        input_df (pd DataFrame): Input data frame. 
-        text_col (str): Column with text feature.
-        model(str): model name on hugging face model hub.
+        article_metadata (list[dict]): A list of dicts with each entry representing metadata from each article. 
+        text_col (str): Coluconst doimn with text feature.
+        call_remote (dict): Should the script also pull in records from the database, and push to the database?
+        model_name (str): Model name on hugging face model hub. Also used to index embeddings within the database.
+        adapter_name (str): Adapter name on hugging face model hub.
     Returns:
         pd DataFrame with original features and sentence embedding features added.
     """
@@ -27,16 +27,16 @@ def add_embeddings(input_df, text_col,
     model.load_adapter(adapter_name,
                        source="hf",
                        load_as="classification",
-                       set_active=True)
-    valid_df = input_df.query("valid").to_dict(orient='records')
-    try:
-        embedding_object = pull_s3(embedding_store).to_dict(orient='records')
-    except Exception as e:
-        embedding_object = []
-    to_embed = [i for i in valid_df if i.get('doi') not in [j.get('doi') for j in embedding_object]]
-    if len(to_embed) > 0:
-        print(f'Building embeddings for {len(to_embed)} objects.')
-        for i in to_embed:
+                       set_active=True,
+                       device_map='gpu')
+    embedding_object = []
+    print(f'Building embeddings for {len(article_metadata)} objects.')
+    for i in article_metadata:
+        check_embedding = embedding_exists(doi = i.get('doi'), model = model_name)
+        if check_embedding is not None:
+            print(f"{model_name} embeddings already exist for {i.get('doi')}.")
+            embedding_object.append(check_embedding)
+        else:
             tokens = tokenizer(i.get(text_col),
                                 padding='max_length',
                                 truncation=True,
@@ -45,14 +45,12 @@ def add_embeddings(input_df, text_col,
                                 return_token_type_ids=False)
             output = model(**tokens)
             embeddings_array = list(chain.from_iterable(output.last_hidden_state[:, 0, :].detach().numpy()))
-            embeddings_key = [f"embedding_{j}" for j in range(len(embeddings_array))]
-            embeddings_dict = dict(zip(embeddings_key, embeddings_array))
-            embeddings_dict['doi'] = i.get('doi')
-            embeddings_dict['date'] = datetime.now()
-            embedding_object = embedding_object + [embeddings_dict]
-        result = pd.DataFrame(embedding_object)
-        push_s3(embedding_store, result, create = create, check = False)
-    else:
-        print('No new objects to be embedded.')
-        result = embedding_object
-    return result
+            embeddings_dict = {'embeddings': [j.item() for j in embeddings_array],
+                            'doi': i.get('doi'),
+                            'date': datetime.now(),
+                            'model': model_name}
+            embedding_object.append(embeddings_dict)
+            submit_embedding(embeddings_dict)    
+    assert (len(embedding_object) != len(article_metadata),
+        f"The submitted object and returned object are not of the same length.")
+    return embedding_object
