@@ -1,18 +1,12 @@
 import os
 from dotenv import load_dotenv
 import src.article_relevance as ar
+import pandas as pd
+from datetime import datetime
 
 load_dotenv()
 
-DOI_STORE = {'Bucket':os.environ['S3_BUCKET'],'Key':'doi_store.parquet'}
-METADATA_STORE = {'Bucket':os.environ['S3_BUCKET'],'Key':'metadata_store.parquet'}
-EMBEDDING_STORE = {'Bucket':os.environ['S3_BUCKET'],'Key':'embedding_store.parquet'}
-PREDICTION_STORE = {'Bucket':os.environ['S3_BUCKET'],'Key':'prediction_store.parquet'}
-LABELLING_STORE =  {'Bucket':os.environ['S3_BUCKET'],'Key':'labelling_store.parquet'}
 API_HOME = os.environ['API_HOME']
-
-import pandas as pd
-from datetime import datetime
 
 db_data = pd.read_csv('data/raw/neotoma_dois.csv')
 label_data = pd.read_csv('data/raw/labelled_data.csv')
@@ -27,9 +21,9 @@ new_dois = ['10.1590/s0102-69922012000200010', '10.1090/S0002-9939-2012-11404-2'
 check = ar.add_dois(new_dois)
 embedding_pubs = ar.get_pub_for_embedding(model = 'allenai/specter2_base')
 
-processed_data = ar.data_preprocessing(embedding_pubs)
+processed_data = ar.data_preprocessing(model_name = 'allenai/specter2_base')
 
-embeddings = ar.add_embeddings(processed_data, 'titleSubtitleAbstract', embedding_store = EMBEDDING_STORE)
+embeddings = ar.add_embeddings(processed_data, 'text', embedding_store = EMBEDDING_STORE)
 
 first_labels = ar.add_labels(LABELLING_STORE, label_data, create = True)
 
