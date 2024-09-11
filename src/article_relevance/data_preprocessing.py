@@ -4,11 +4,13 @@ import pandas as pd
 from .s3_management import pull_s3
 from transformers import AutoTokenizer
 from bs4 import BeautifulSoup
+import lxml
+from .api_calls import get_pub_for_embedding
 
 
 #logger = get_logger(__name__)
 
-def data_preprocessing(metadata):
+def data_preprocessing(model_name = 'allenai/specter2_base'):
     """
     Clean up title, subtitle, abstract, subject.
     Feature engineer for descriptive text column.
@@ -19,32 +21,22 @@ def data_preprocessing(metadata):
     Returns:
         pd DataFrame containing all info required for model prediction.
     """
-    tokenizer = AutoTokenizer.from_pretrained('allenai/specter2_base')
-
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    metadata = get_pub_for_embedding(model = model_name)
     # Join arrays:
     text_batch = [{'doi': d.get('doi'),
                    'text': (d.get('title') or '').lower() + tokenizer.sep_token +
                   (d.get('subtitle') or '').lower() + tokenizer.sep_token +
                   (d.get('abstract') or '').lower(),
-                  'language': d.get('lang')} for d in metadata]
+                  'language': d.get('language')} for d in metadata]
     # Remove HTML tags from abstract
     clean_text = [{'doi': i.get('doi'), 
                    'text': BeautifulSoup(i.get('text'), "lxml").text,
-                   'lang': i.get('lang)')} for i in text_batch]
+                   'language': i.get('language')} for i in text_batch]
     
     # Impute only when there are > 5 characters for langdetect to impute accurately
-    clean_text.update('impute') = [(i.get('language') is None) &
-                                   (i.get('text') != '[SEP][SEP]') &
-                        (len(str(i.get('text') or ''))) for i in clean_text]
-    
-    # Apply imputation
-    valid_data.loc[impute_condition,'language'] = valid_data.loc[impute_condition, 'titleSubtitleAbstract'].apply(lambda x: enHelper(x))
-    # Set valid_for_prediction col to 0 if cannot be imputed or detected language is not English
-    valid_data.loc[(valid_data['language'] != 'en'), 'valid'] = False
-    valid_data.loc[valid_data['subject'].apply(len) == 0, 'valid'] = False
-    # Convert journal list to string:
-    valid_data.loc[:,'container-title'] = [': '.join(i) for i in valid_data['container-title']]
-    # What does this do?
-    # valid_data = valid_data.groupby(valid_data.columns, axis=1).sum()
-    #logger.info(f"Data Preprocessing Completed. {valid_data.shape[0]} valid observations.")
-    return valid_data
+    for i in clean_text:
+        if (i.get('language') is None) & (i.get('text') != '[SEP][SEP]') & (len(str(i.get('text') or ''))):
+            i['language'] = enHelper(i.get('text'))
+
+    return clean_text
