@@ -1,59 +1,57 @@
 import os
 from dotenv import load_dotenv
 import src.article_relevance as ar
-import pandas as pd
 from datetime import datetime
+import csv
+import re
+import pandas as pd
+import json
+from collections import Counter
 
 load_dotenv()
 
 API_HOME = os.environ['API_HOME']
 
-db_data = pd.read_csv('data/raw/neotoma_dois.csv')
-label_data = pd.read_csv('data/raw/labelled_data.csv')
+with open('data/raw/neotoma_dois.csv') as file:
+    db_data = list(csv.DictReader(file))
 
-all_doi = set(db_data['doi'].tolist() + label_data['doi'].tolist())
+with open('data/raw/labelled_data.csv') as file:
+    label_data = list(csv.DictReader(file))
+
+all_doi = set([i.get('doi') for i in db_data] + [i.get('doi') for i in label_data])
 doi_set = ar.clean_dois(all_doi)
 
-check = ar.add_dois(all_doi)
+check = ar.register_dois(all_doi)
 
 new_dois = ['10.1590/s0102-69922012000200010', '10.1090/S0002-9939-2012-11404-2', '10.1063/1.4742131', '10.1007/s13355-012-0130-x']
 
-check = ar.add_dois(new_dois)
-embedding_pubs = ar.get_pub_for_embedding(model = 'allenai/specter2_base')
+check = ar.register_dois(new_dois)
 
 processed_data = ar.data_preprocessing(model_name = 'allenai/specter2_base')
 
-embeddings = ar.add_embeddings(processed_data, 'text', embedding_store = EMBEDDING_STORE)
+embeddings = ar.add_embeddings(processed_data, text_col = 'text', model_name = 'allenai/specter2_base')
 
-first_labels = ar.add_labels(LABELLING_STORE, label_data, create = True)
+project_exists = ar.project_exists('Neotoma Relevance')
+if project_exists is None:
+    ar.register_project('Neotoma Relevance', 'A project to manage models for assessing publication relevance for Neotoma.')
 
-neotoma_labels = pd.DataFrame([db_data.doi]).transpose().drop_duplicates()
-neotoma_labels['label'] = 'Neotoma'
-neotoma_labels['source'] = 'Neotoma'
+labels = list(set([i.get('label') for i in label_data]))
+first_labels = ar.add_paper_labels(label_data, project = 'Neotoma Relevance', create = True)
 
-all_labels = ar.add_labels(LABELLING_STORE, neotoma_labels, create = True)
+neotoma_labels = [{'doi': i.get('doi'), 'label': 'In Neotoma', 'person': '0000-0002-2700-4605'} for i in db_data]
+
+all_labels = ar.add_paper_labels(neotoma_labels, project = 'Neotoma Relevance', create = True)
 
 # Now need to load in the labelled data and do the train/test split
+data_model = ar.get_model_data(project = "Neotoma Relevance", model = "allenai/specter2_base")
 
-dois = ar.pull_s3(DOI_STORE)
-metadata = ar.pull_s3(METADATA_STORE).loc[metadata['valid'] == True]
-embeddings = ar.pull_s3(EMBEDDING_STORE)
-labels = ar.pull_s3(LABELLING_STORE)
+data_model = [i for i in data_model if i.get('label') is not None]
+data_model = [dict(item, **{'target': int(bool(re.search(pattern='Not', string=item['label'])))}) for item in data_model]
+data_embedding = [i['embeddings'] for i in data_model]
+data_input = pd.DataFrame(data_embedding, columns = [f'embedding_{str(i)}' for i in range(len(data_model[0]['embeddings']))])
+data_input = data_input.assign(doi = [i['doi'] for i in data_model])
+data_input = data_input.assign(target = [i['target'] for i in data_model])
 
-data_model = pd.merge(dois,
-                      metadata,
-                      how = 'inner',
-                      on = ['doi'])[['doi', 'valid', 'subject']].merge(embeddings.drop('date', axis = 1),
-                                                                       on = ['doi'],
-                                                                       how = 'inner')
-
-labels.loc[labels['label'] == 'Neotoma', 'target'] = 1
-labels.loc[labels['label'] == 'Maybe Neotoma', 'target'] = 1
-labels.loc[pd.isna(labels['target']), 'target'] = 0
-labels = labels.drop(['label', 'data', 'source'], axis = 1)
-
-data_model = data_model.merge(labels, on = ['doi'], how = 'right')
-data_model = data_model.loc[data_model['valid'] == True].drop(['valid','date'], axis = 1)
 
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression 
@@ -62,20 +60,10 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import BernoulliNB
 from sklearn.ensemble import RandomForestClassifier
 
-#data_model = data_model[data_model['subject'] != []]
-
-X_train, X_test, y_train, y_test = train_test_split(data_model.copy(),
-                                                    data_model['target'],
+X_train, X_test, y_train, y_test = train_test_split(data_input.copy(),
+                                                    data_input['target'],
                                                     test_size=0.2,
                                                     random_state=42)
-neotoma_encoder = ar.NeotomaOneHotEncoder(min_count=3)
-X_encoded = neotoma_encoder.fit_transform(X_train[['subject']])
-
-print(X_train.shape)
-print(X_encoded.shape)
-#removed_rows = neotoma_encoder.removed_rows
-#print(X_train.loc[removed_rows, :])
-# We want to run a set of different classifiers to determine the appropriate classification method:
 
 classifiers = [
     (LogisticRegression(max_iter=1000), {
@@ -83,7 +71,7 @@ classifiers = [
         'max_iter': [100, 1000, 10000],
         'penalty': ['l2'],
         'solver': ['liblinear', 'lbfgs']
-    })]
+    }),
     (DecisionTreeClassifier(class_weight="balanced"), {
         'max_depth': range(10, 100, 10)
     }),
@@ -100,7 +88,31 @@ classifiers = [
 ]
 
 resultsDict = ar.relevancePredictTrain(x_train = X_train, y_train = y_train, classifiers = classifiers)
-
 with open('results.json', 'w', encoding='UTF-8') as f:
     json.dump(resultsDict['report'], f, indent=4, sort_keys=True, default=str)
 
+results = ar.relevancePredict(data_input, model = 'data/models/decisiontreeclassifier_2024-09-22_22-30-35.joblib')
+
+# Get new papers:
+with open('./data/raw/newdois.csv', 'r') as file:
+    new_dois = file.read().splitlines()
+
+clean = ar.clean_dois(new_dois)
+check = ar.register_dois(clean['clean'])
+
+processed_data = ar.data_preprocessing(model_name = 'allenai/specter2_base')
+
+embeddings = ar.add_embeddings(processed_data, text_col = 'text', model_name = 'allenai/specter2_base')
+
+new_data_model = ar.get_model_data(project = None, model = "allenai/specter2_base")
+
+data_embedding = [i['embeddings'] for i in new_data_model]
+data_input = pd.DataFrame(data_embedding, columns = [f'embedding_{str(i)}' for i in range(len(data_model[0]['embeddings']))])
+data_input = data_input.assign(doi = [i['doi'] for i in data_model])
+
+results = ar.relevancePredict(data_input, model = 'decisiontreeclassifier_2024-09-22_22-30-35.joblib')
+
+goodpapers = results.loc[results['prediction'] == 1]['doi'].tolist()
+pubs = [ar.get_publication_metadata(i) for i in goodpapers]
+
+counts = Counter([i[0].get('containertitle') for i in pubs])

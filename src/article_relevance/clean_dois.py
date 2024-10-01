@@ -43,12 +43,51 @@ def clean_dois(dois):
                     print("If you want to include the record, please fix this data element.")
                     continue
         else:
-            matches = re.search(regex, i)
+            strip_whitespace = i.strip()
+            matches = re.search(regex, strip_whitespace)
             if matches is None:
                     bad_dois.add(i)
             else:
                     clean_dois.add(matches.group(1))
     return {'clean': list(clean_dois), 'removed': list(bad_dois)}
+
+def clean_doi(doi: str):
+    """_summary_
+
+    Args:
+        doi (_str_): _A string representing a DOI._
+
+    Raises:
+        ValueError: _The DOI is of the wrong string construction._
+
+    Returns:
+        _str_: _A string representing a valid DOI, stripped of whitespace._
+    >>> clean_doi('abcd')
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+      File "<stdin>", line 18, in clean_doi
+    ValueError: The doi provided 'abcd' is not a valid DOI.
+    >>> clean_doi('10.2307/1551601\xa0 ')
+    '10.2307/1551601'
+    >>> clean_doi('https://dx.doi.org/10.2307/1551601')
+    '10.2307/1551601'
+    """
+    regex = re.compile(r'.*(10\.\d{4,9}/[-.;()/:a-z0-9A-Z]+$)')
+    stripped_doi = doi.strip()
+    matches = re.search(regex, stripped_doi)
+    if matches is None:
+        raise ValueError(f"The doi provided '{doi}' is not a valid DOI.")
+    else:
+        return matches[1]
+
+def clean_orcid(orcid):
+    regex = re.compile(r'.*(10\.\d{4,9}/[-.;()/:a-z0-9A-Z]+$)')
+    stripped_orcid = orcid.strip()
+    matches = re.search(regex, stripped_orcid)
+    if matches is None:
+        raise ValueError(f"The ORCID provided {orcid} is not a valid ORCID.")
+    else:
+        return 'https://orcid.org/' + matches[1]
 
 if __name__ == "__main__":
     import doctest

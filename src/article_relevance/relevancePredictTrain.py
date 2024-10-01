@@ -6,8 +6,6 @@ from sklearn.impute import SimpleImputer
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.metrics import make_scorer, recall_score, f1_score, precision_score, accuracy_score
 
-from .NeotomaOneHotEncoder import NeotomaOneHotEncoder
-
 def relevancePredictTrain(x_train, y_train, classifiers):
     """
     x_train
@@ -16,22 +14,16 @@ def relevancePredictTrain(x_train, y_train, classifiers):
     """
 
     # Making sure x_train contains only required columns
-    selected_columns = [col for col in x_train.columns if col.startswith('embedding_')]
-    selected_columns = selected_columns + ['subject', 'doi']
+    selected_columns = [col for col in x_train.columns if col.startswith('embedding')]
+    selected_columns = selected_columns + ['doi']
 
     x_train = x_train[selected_columns]
 
     # Processing of Elements that need fit-transform
     print("Setting up features")
-    subFeature = ['subject']
-    subTransformer = NeotomaOneHotEncoder(min_count=3)
-    neotoma_encoder = NeotomaOneHotEncoder(min_count=1)
-    X_encoded = neotoma_encoder.fit_transform(x_train[['subject']])
-
     preprocessor = ColumnTransformer(
         transformers = [
-            ('doi', 'drop', ['doi']), # allow to keep the DOI but don't use it to train
-            ('neotoma_encoder', subTransformer, subFeature)],
+            ('doi', 'drop', ['doi'])],
         remainder = "passthrough"
     )
     # Define the metrics you want to capture
@@ -77,7 +69,7 @@ def relevancePredictTrain(x_train, y_train, classifiers):
         randomized_search.fit(x_train, y_train)
         fit_time = datetime.now() - starttime
         best_classifier = randomized_search.best_estimator_
-        joblib.dump(best_classifier, f"models/{classifier_name}_{timestamp}.joblib")
+        joblib.dump(best_classifier, f"./data/models/{classifier_name}_{timestamp}.joblib")
         best_scores_train = {
             metric: randomized_search.cv_results_[f"mean_train_{metric}"][randomized_search.best_index_]
             for metric in classification_metrics
@@ -103,7 +95,7 @@ def relevancePredictTrain(x_train, y_train, classifiers):
     megaDictionary['report'].append(resultsDict)
     megaDictionary['date'].append(datetime.now())
 
-    joblib.dump(megaDictionary, f"results/Iteration_{timestamp}.joblib")
+    joblib.dump(megaDictionary, f"./data/results/Iteration_{timestamp}.joblib")
 
     print("finished process; returning results")
 

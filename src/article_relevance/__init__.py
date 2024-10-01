@@ -12,5 +12,8 @@ from .NeotomaOneHotEncoder import NeotomaOneHotEncoder
 from .updateSource import updateSource
 from .s3_management import pull_s3, push_s3, update_dois
 from .clean_dois import clean_dois
-from .add_labels import add_labels
-from .api_calls import add_dois, label_exists, embedding_exists, submit_embedding, get_pub_for_embedding, get_publication_metadata
+from .add_labels import add_paper_labels
+from .api_calls import get_pub_for_embedding, get_publication_metadata
+from .register_apis import register_label, register_embedding, register_project, register_dois, register_person, register_paper_label
+from .check_apis import project_exists, label_exists, paper_label_exists, embedding_exists, person_exists
+from .get_model_data import get_model_data

@@ -5,7 +5,8 @@ from itertools import chain
 import pandas as pd
 from transformers import AutoTokenizer
 from adapters import AutoAdapterModel
-from .api_calls import submit_embedding, embedding_exists
+from .check_apis import embedding_exists
+from .register_apis import register_embedding
 
 def add_embeddings(article_metadata, text_col,
                    model_name = 'allenai/specter2_base',
@@ -50,7 +51,7 @@ def add_embeddings(article_metadata, text_col,
                             'date': datetime.now(),
                             'model': model_name}
             embedding_object.append(embeddings_dict)
-            submit_embedding(embeddings_dict)    
+            register_embedding(embeddings_dict)    
     assert (len(embedding_object) != len(article_metadata),
         f"The submitted object and returned object are not of the same length.")
     return embedding_object
