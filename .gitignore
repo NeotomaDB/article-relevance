@@ -9,7 +9,7 @@ data/**/*.json
 # exclude .csv except for specific small data
 data/**/*.csv
 !data/entity-extraction/raw/taxa.csv
-
+!data/raw/*.csv
 # ignore files in models folder but keep .gitkeep
 models/ner/*
 !.gitkeep
