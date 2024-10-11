@@ -107,7 +107,7 @@ embeddings = ar.add_embeddings(processed_data, text_col = 'text', model_name = '
 new_data_model = ar.get_model_data(project = None, model = "allenai/specter2_base")
 
 data_embedding = [i['embeddings'] for i in new_data_model]
-data_input = pd.DataFrame(data_embedding, columns = [f'embedding_{str(i)}' for i in range(len(data_model[0]['embeddings']))])
+data_input = pd.DataFrame(data_embedding, columns = [f'embedding_{str(i)}' for i in range(len(new_data_model[0]['embeddings']))])
 data_input = data_input.assign(doi = [i['doi'] for i in data_model])
 
 results = ar.relevancePredict(data_input, model = 'decisiontreeclassifier_2024-09-22_22-30-35.joblib')
