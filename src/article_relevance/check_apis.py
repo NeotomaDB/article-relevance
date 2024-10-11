@@ -60,7 +60,7 @@ def paper_label_exists(doi, label, project, person):
         print(f'General exception for label: {label}:')
         print(e)
 
-def embedding_exists(doi, model):
+def embedding_exists(doi:str, model:str):
     try:
         outcome = requests.get('http://' + os.environ['API_HOME'] + '/v0.1/doi/embeddings',
                             params = {'doi': doi, 'model': model},
