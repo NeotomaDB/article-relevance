@@ -14,14 +14,14 @@ def register_embedding(embedding_dict):
                     data = {'data': json.dumps(embedding_dict, default=str)},
                     timeout = 10)
         if json.loads(outcome.content).get('status', 0) == 'success':
-            print(f'Added {embedding_dict.get('model')} embeddings for doi: {embedding_dict.get('doi')}')
+            print(f"Added {embedding_dict.get('model')} embeddings for doi: {embedding_dict.get('doi')}")
         else:
-            print(f'Failed for: {embedding_dict.get('doi')}\n{json.loads(outcome.content).get('message',None)}')
+            print(f"Failed for: {embedding_dict.get('doi')}\n{json.loads(outcome.content).get('message',None)}")
     except ReadTimeout as e:
-        print(f'Connection failed for DOI {embedding_dict.get('doi')}:')
+        print(f"Connection failed for DOI {embedding_dict.get('doi')}:")
         print(e)
     except Exception as e:
-        print(f'General failure for DOI {embedding_dict.get('doi')}:')
+        print(f"General failure for DOI {embedding_dict.get('doi')}:")
         print(e)
 
 def register_project(project, notes):
@@ -122,7 +122,7 @@ def register_dois(dois):
         print("No valid DOIs in the submitted set of values.")
         return valid_doi
     else:
-        print(f'{len(cleaned_entries.get('clean')) + len(cleaned_entries.get('removed'))} unique DOIs submitted.')
+        print(f"{len(cleaned_entries.get('clean')) + len(cleaned_entries.get('removed'))} unique DOIs submitted.")
         print(f'{len(valid_doi)} DOIs valid.')
         bodydata = [{'doi': i} for i in valid_doi]
         badapi = []
@@ -135,13 +135,13 @@ def register_dois(dois):
                         data = {'data': [json.dumps(i)]},
                         timeout = 10)
             if json.loads(outcome.content).get('data', 0) != 0:
-                print(f'Added doi: {i.get('doi')}')
+                print(f"Added doi: {i.get('doi')}")
                 goodapi.append(i)
             elif json.loads(outcome.content).get('message', 'oops') == "DOI already present.":
-                print(f'doi was present: {i.get('doi')}')
+                print(f"doi was present: {i.get('doi')}")
                 presentapi.append(i)
             else:
-                print(f'Failed for: {i.get('doi')}\n{json.loads(outcome.content).get('message',None)}')
+                print(f"Failed for: {i.get('doi')}\n{json.loads(outcome.content).get('message',None)}")
         except ReadTimeout as e:
             print(f'Connection failed for DOI {i}:')
             print(e)

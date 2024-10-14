@@ -1,7 +1,7 @@
 from .enHelper import enHelper
 from .logs import get_logger
 import pandas as pd
-from .s3_management import pull_s3
+#from .s3_management import pull_s3
 from transformers import AutoTokenizer
 from bs4 import BeautifulSoup
 import lxml
