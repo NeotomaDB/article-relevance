@@ -25,7 +25,7 @@ def relevancePredict(processedDF,
     """
     #logger.info(f'Prediction start.')
     try:
-        model_object = joblib.load(f'./data/models/{model}')
+        model_object = joblib.load(model)
     except OSError:
         #logger.error("Model for article relevance not found.")
         raise(FileNotFoundError)

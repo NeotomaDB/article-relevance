@@ -24,10 +24,20 @@ def register_embedding(embedding_dict):
         print(f"General failure for DOI {embedding_dict.get('doi')}:")
         print(e)
 
-def register_project(project, notes):
+def register_project(project:str, notes:str):
+    """_Add a new project into the database._
+
+    Args:
+        project (str): _A short name for the project, to be used with labelling and model construction._
+        notes (str): _A longer description of the project to help users understand what the project is intended to do, and who may be involved._
+
+    Returns:
+        _type_: _description_
+    >>> test_register = register_project("A test project", "An attempt to test.")
+    """    
     try:
         outcome = requests.post('http://' + os.environ['API_HOME'] + '/v0.1/projects',
-                            data = {'data': json.dumps({'project': project, 'notes': notes})},
+                            data = {'data': json.dumps({'project': project, 'projectnotes': notes})},
                             timeout = 10)
         if outcome.status_code == 200:
             call_output = json.loads(outcome.content).get('data')
@@ -97,7 +107,17 @@ def register_paper_label(doi, label, project, orcid):
         print(f'General exception for label {label}:')
         print(e)
 
-def register_dois(dois):
+def register_model(modlname: str, params: dict, model: str):
+    """_Insert a model file into the database.
+
+    Args:
+        modelname (_str_): The name for the model, e.g., 'RandomForest'
+        params (_dict_): A dictionary with model parameters provided.
+        model (_str_): A filename for the model file location.
+    """
+    return None
+
+def register_dois(dois: list, verbose: bool = True):
     """_Insert each unique DOI. Do not replace existing DOIs._
 
     Args:
@@ -118,12 +138,13 @@ def register_dois(dois):
 
     valid_doi = cleaned_entries.get('clean')
 
-    if len(valid_doi) == 0:
+    if len(valid_doi) == 0 and verbose:
         print("No valid DOIs in the submitted set of values.")
         return valid_doi
     else:
-        print(f"{len(cleaned_entries.get('clean')) + len(cleaned_entries.get('removed'))} unique DOIs submitted.")
-        print(f'{len(valid_doi)} DOIs valid.')
+        if verbose:
+            print(f'{len(cleaned_entries.get('clean')) + len(cleaned_entries.get('removed'))} unique DOIs submitted.')
+            print(f'{len(valid_doi)} DOIs valid.')
         bodydata = [{'doi': i} for i in valid_doi]
         badapi = []
         goodapi = []
@@ -135,13 +156,16 @@ def register_dois(dois):
                         data = {'data': [json.dumps(i)]},
                         timeout = 10)
             if json.loads(outcome.content).get('data', 0) != 0:
-                print(f"Added doi: {i.get('doi')}")
+                if verbose:
+                    print(f'Added doi: {i.get('doi')}')
                 goodapi.append(i)
             elif json.loads(outcome.content).get('message', 'oops') == "DOI already present.":
-                print(f"doi was present: {i.get('doi')}")
+                if verbose:
+                    print(f'doi was present: {i.get('doi')}')
                 presentapi.append(i)
             else:
-                print(f"Failed for: {i.get('doi')}\n{json.loads(outcome.content).get('message',None)}")
+                if verbose:
+                    print(f'Failed for: {i.get('doi')}\n{json.loads(outcome.content).get('message',None)}')
         except ReadTimeout as e:
             print(f'Connection failed for DOI {i}:')
             print(e)
@@ -158,3 +182,6 @@ def register_dois(dois):
             'inserted': goodapi,
             'present': presentapi}
 
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()

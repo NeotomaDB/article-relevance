@@ -5,7 +5,7 @@ import re
 {"clean": None, "removed": ["abcde"]}
 """
 
-def clean_orcids(orcids):
+def clean_orcids(orcids: str):
     """_Clean up ORCIDs by removing whitespace and invalid ORCIDs and ensuring they are represented as URLs_
 
     Args:

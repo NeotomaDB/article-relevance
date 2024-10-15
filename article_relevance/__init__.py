@@ -9,6 +9,7 @@ from .relevancePredictTrain import relevancePredictTrain
 from .predToPQ import predToPQ
 from .NeotomaOneHotEncoder import NeotomaOneHotEncoder
 from .clean_dois import clean_dois
+from .clean_orcids import clean_orcids
 from .add_labels import add_paper_labels
 from .api_calls import get_pub_for_embedding, get_publication_metadata
 from .register_apis import register_label, register_embedding, register_project, register_dois, register_person, register_paper_label
