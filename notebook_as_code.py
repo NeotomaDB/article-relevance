@@ -1,7 +1,6 @@
 import os
 from dotenv import load_dotenv
-import src.article_relevance as ar
-from datetime import datetime
+import article_relevance as ar
 import csv
 import re
 import pandas as pd

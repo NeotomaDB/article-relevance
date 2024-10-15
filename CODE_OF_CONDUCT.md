@@ -1,4 +1,4 @@
-Code of Conduct
+# Code of Conduct
 
 ## Our Pledge
 
@@ -41,5 +41,3 @@ Project maintainers who do not follow or enforce the Code of Conduct in good fai
 ## Attribution
 
 This Code of Conduct is adapted from the [Contributor Covenant homepage](http://contributor-covenant.org/version/1/4), version 1.4.
-
-

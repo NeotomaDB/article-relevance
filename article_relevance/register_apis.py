@@ -37,7 +37,7 @@ def register_project(project:str, notes:str):
     """    
     try:
         outcome = requests.post('http://' + os.environ['API_HOME'] + '/v0.1/projects',
-                            data = {'data': json.dumps({'project': project, 'notes': notes})},
+                            data = {'data': json.dumps({'project': project, 'projectnotes': notes})},
                             timeout = 10)
         if outcome.status_code == 200:
             call_output = json.loads(outcome.content).get('data')
@@ -107,6 +107,16 @@ def register_paper_label(doi, label, project, orcid):
         print(f'General exception for label {label}:')
         print(e)
 
+def register_model(modlname: str, params: dict, model: str):
+    """_Insert a model file into the database.
+
+    Args:
+        modelname (_str_): The name for the model, e.g., 'RandomForest'
+        params (_dict_): A dictionary with model parameters provided.
+        model (_str_): A filename for the model file location.
+    """
+    return None
+
 def register_dois(dois: list, verbose: bool = True):
     """_Insert each unique DOI. Do not replace existing DOIs._
 
@@ -128,7 +138,7 @@ def register_dois(dois: list, verbose: bool = True):
 
     valid_doi = cleaned_entries.get('clean')
 
-    if len(valid_doi) == 0:
+    if len(valid_doi) == 0 and verbose:
         print("No valid DOIs in the submitted set of values.")
         return valid_doi
     else:
@@ -146,7 +156,8 @@ def register_dois(dois: list, verbose: bool = True):
                         data = {'data': [json.dumps(i)]},
                         timeout = 10)
             if json.loads(outcome.content).get('data', 0) != 0:
-                print(f'Added doi: {i.get('doi')}')
+                if verbose:
+                    print(f'Added doi: {i.get('doi')}')
                 goodapi.append(i)
             elif json.loads(outcome.content).get('message', 'oops') == "DOI already present.":
                 if verbose:
