@@ -1,0 +1,23 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+[project]
+name = "neotomaart"
+description = "Article Recommendation system for Research Databases."
+version = "0.0.1"
+readme = "README.md"
+license = "MIT"
+authors = [
+    { name = "Simon Goring", email = "goring@wisc.edu" }
+]
+maintainers = [
+    { name = "Simon Goring", email = "goring@wisc.edu" }
+]
+keywords = ["postgres", "sklearn", "embeddings", "recommender", "Docker"]
+classifiers = ["Development Status :: 3 - Alpha", "Programming Language :: Python :: 3"]
+[project.urls]
+"Source code" = "https://github.com/NeotomaDB/article-relevance"
+[tool]
+[tool.hatch]
+[tool.hatch.build.targets.wheel]
+packages = ["src/article_relevance"]

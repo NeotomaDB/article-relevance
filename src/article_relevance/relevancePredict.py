@@ -1,7 +1,5 @@
 import pandas as pd
 import joblib
-import boto3
-from io import BytesIO
 from .logs import get_logger
 from datetime import datetime
 

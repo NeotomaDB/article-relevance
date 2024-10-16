@@ -33,7 +33,7 @@ def register_project(project:str, notes:str):
 
     Returns:
         _type_: _description_
-    >>> test_register = register_project("A test project", "An attempt to test.")
+    >>> test_register = ar.register_project("A test project", "An attempt to test.")
     """    
     try:
         outcome = requests.post('http://' + os.environ['API_HOME'] + '/v0.1/projects',
@@ -52,7 +52,15 @@ def register_project(project:str, notes:str):
         print(f'General exception for project {project}:')
         print(e)
 
-def register_person(orcid):
+def register_person(orcid:str):
+    """_summary_
+
+    Args:
+        orcid (str): _description_
+
+    Returns:
+        _type_: _description_
+    """    
     try:
         outcome = requests.post('http://' + os.environ['API_HOME'] + '/v0.1/people',
                             data = {'data': json.dumps({'person': orcid})},
