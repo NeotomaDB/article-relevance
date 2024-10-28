@@ -1,6 +1,4 @@
 from .enHelper import enHelper
-from .logs import get_logger
-import pandas as pd
 from transformers import AutoTokenizer
 from bs4 import BeautifulSoup
 import lxml

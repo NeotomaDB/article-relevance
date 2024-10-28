@@ -51,7 +51,6 @@ data_input = pd.DataFrame(data_embedding, columns = [f'embedding_{str(i)}' for i
 data_input = data_input.assign(doi = [i['doi'] for i in data_model])
 data_input = data_input.assign(target = [i['target'] for i in data_model])
 
-
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression 
 from sklearn.tree import DecisionTreeClassifier
@@ -62,7 +61,8 @@ from sklearn.ensemble import RandomForestClassifier
 X_train, X_test, y_train, y_test = train_test_split(data_input.copy(),
                                                     data_input['target'],
                                                     test_size=0.2,
-                                                    random_state=42)
+                                                    random_state=42,
+                                                    stratify=data_input['target'])
 
 classifiers = [
     (LogisticRegression(max_iter=1000), {
@@ -107,11 +107,15 @@ new_data_model = ar.get_model_data(project = None, model = "allenai/specter2_bas
 
 data_embedding = [i['embeddings'] for i in new_data_model]
 data_input = pd.DataFrame(data_embedding, columns = [f'embedding_{str(i)}' for i in range(len(new_data_model[0]['embeddings']))])
-data_input = data_input.assign(doi = [i['doi'] for i in data_model])
+data_input = data_input.assign(doi = [i['doi'] for i in new_data_model])
 
-results = ar.relevancePredict(data_input, model = 'decisiontreeclassifier_2024-09-22_22-30-35.joblib')
+models = [i for i in os.listdir('./data/models/') if re.match(r'^.*joblib$', i)]
 
-goodpapers = results.loc[results['prediction'] == 1]['doi'].tolist()
+results = []
+for i in models:
+    results.append(ar.relevancePredict(data_input, model = i))
+
+goodpapers = results[0].loc[results[0]['prediction'] == 1]['doi'].tolist()
 pubs = [ar.get_publication_metadata(i) for i in goodpapers]
 
 counts = Counter([i[0].get('containertitle') for i in pubs])
