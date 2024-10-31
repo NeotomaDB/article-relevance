@@ -1,6 +1,3 @@
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
 [project]
 name = "neotomaart"
 description = "Article Recommendation system for Research Databases."
@@ -15,9 +12,19 @@ maintainers = [
 ]
 keywords = ["postgres", "sklearn", "embeddings", "recommender", "Docker"]
 classifiers = ["Development Status :: 3 - Alpha", "Programming Language :: Python :: 3"]
+dependencies = [
+    "bs4>=0.0.2",
+    "datetime>=5.5",
+    "langdetect>=1.0.9",
+    "pandas>=2.2.3",
+    "requests>=2.32.3",
+]
 [project.urls]
 "Source code" = "https://github.com/NeotomaDB/article-relevance"
 [tool]
 [tool.hatch]
 [tool.hatch.build.targets.wheel]
 packages = ["src/article_relevance"]
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
