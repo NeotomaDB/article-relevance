@@ -23,6 +23,6 @@ def loadPQ(AWS = True, parquetPath=None):
             latestPQFilePath = os.path.join(parquetPath, latestPQFile)
             try:
                 df = pd.read_parquet(latestPQFilePath)
-            except Exception as e:
+            except Exception:
                 print("Parquet file not available, querying all GDD.")
     return df

@@ -110,7 +110,7 @@ def gddQuery(df = None,
             next_page = next_response_dict['success']['next_page']
             n_refresh += 1
     
-    logger.info(f'GeoDeepDive query completed.')
+    logger.info('GeoDeepDive query completed.')
     
     # ========= Convert gdd data to dataframe =========
 
@@ -141,7 +141,7 @@ def gddQuery(df = None,
         logger.info(f'{result_df.shape[0]} articles are new addition for relevance prediction.')
         
     else:
-        logger.info(f'Querying all')
+        logger.info('Querying all')
         result_df = gdd_df.copy()
     
     result_df['queryinfo_min_date'] = min_date

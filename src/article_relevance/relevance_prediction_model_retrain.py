@@ -40,7 +40,6 @@ import json
 
 import numpy as np
 import pandas as pd
-from sentence_transformers import SentenceTransformer
 import datetime
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.model_selection import train_test_split
@@ -83,13 +82,13 @@ def train_data_load_split(train_raw_csv_path):
     
     
     if metadata_df['text_with_abstract'].isna().any():
-        raise ValueError(f"Column 'text_with_abstract' contains NaN values.")
+        raise ValueError("Column 'text_with_abstract' contains NaN values.")
     if metadata_df['target'].isna().any():
-        raise ValueError(f"Column 'target' contains NaN values.")
+        raise ValueError("Column 'target' contains NaN values.")
     if metadata_df['has_abstract'].isna().any():
-        raise ValueError(f"Column 'has_abstract' contains NaN values.")
+        raise ValueError("Column 'has_abstract' contains NaN values.")
     if metadata_df['is-referenced-by-count'].isna().any():
-        raise ValueError(f"Column 'is-referenced-by-count' contains NaN values.")
+        raise ValueError("Column 'is-referenced-by-count' contains NaN values.")
 
 
     # Split into train/valid/test sets
@@ -201,13 +200,13 @@ def model_train(train_df, model_dir, model_c = 0.01563028103558011):
 
     # ======== Ensure feature values are valid ===========
     if train_df['has_abstract'].isna().any():
-        raise ValueError(f"Column 'has_abstract' contains NaN values.")
+        raise ValueError("Column 'has_abstract' contains NaN values.")
     if train_df['is-referenced-by-count'].isna().any():
-        raise ValueError(f"Column 'is-referenced-by-count' contains NaN values.")
+        raise ValueError("Column 'is-referenced-by-count' contains NaN values.")
     if train_df['text_with_abstract'].isna().any():
-        raise ValueError(f"Column 'text_with_abstract' contains NaN values.")
+        raise ValueError("Column 'text_with_abstract' contains NaN values.")
     if train_df['target'].isna().any():
-        raise ValueError(f"Column 'target' contains NaN values.")
+        raise ValueError("Column 'target' contains NaN values.")
     
     # ======= only keep feature columns ==========
     keep_col = ['target', 'has_abstract', 'subject_clean', 'is-referenced-by-count'] + [str(i) for i in range(0,768)]
@@ -246,7 +245,7 @@ def model_train(train_df, model_dir, model_c = 0.01563028103558011):
                                                     random_state=123, 
                                                     C=model_c))
     
-    logger.info(f'Training - Training start.')
+    logger.info('Training - Training start.')
     logreg_model.fit(X_train, y_train)
 
     # save the model with current data time
@@ -259,7 +258,7 @@ def model_train(train_df, model_dir, model_c = 0.01563028103558011):
     model_file_name = os.path.join(model_dir, f"retrained_model_{formatted_datetime}.joblib")
     joblib.dump(logreg_model, model_file_name)
 
-    logger.info(f'Training - Training completed.')
+    logger.info('Training - Training completed.')
 
 
     return logreg_model
@@ -364,7 +363,7 @@ def model_eval(model, valid_df, test_df, report_dir):
     with open(report_file_path, 'w') as json_file:
         json.dump(results, json_file)
     
-    logger.info(f'Evaluation - Completed. Results saved in specified folder.')
+    logger.info('Evaluation - Completed. Results saved in specified folder.')
 
 
 def main():

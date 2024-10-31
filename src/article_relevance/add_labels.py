@@ -1,4 +1,3 @@
-from datetime import datetime
 from .check_apis import paper_label_exists, project_exists, label_exists, person_exists
 from .register_apis import register_paper_label, register_person, register_label
 

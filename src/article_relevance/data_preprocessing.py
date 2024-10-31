@@ -1,7 +1,6 @@
 from .enHelper import enHelper
 from transformers import AutoTokenizer
 from bs4 import BeautifulSoup
-import lxml
 from .api_calls import get_pub_for_embedding
 
 

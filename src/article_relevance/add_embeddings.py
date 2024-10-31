@@ -100,5 +100,5 @@ def add_embeddings(article_metadata:list,
             if register:
                 register_embedding(embeddings_dict)    
     assert (len(embedding_object) != len(article_metadata),
-        f"The submitted object and returned object are not of the same length.")
+        "The submitted object and returned object are not of the same length.")
     return embedding_object

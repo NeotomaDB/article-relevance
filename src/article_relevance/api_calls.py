@@ -1,10 +1,4 @@
-from io import BytesIO
-import pandas as pd
-from .clean_dois import clean_dois
-from .logs import get_logger
-from .raw_crossref import pull_crossref
 import requests
-from requests.exceptions import ReadTimeout
 import os
 import json
 

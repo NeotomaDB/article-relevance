@@ -37,7 +37,7 @@ def clean_dois(dois):
         if not isinstance(i, str):
             try:
                 bad_dois.add(i)
-            except TypeError as e:
+            except TypeError:
                     print("An element of the doi list cannot be parsed as a string and has been removed.")
                     print(f"Element ({type(i)}): {i}")
                     print("If you want to include the record, please fix this data element.")

@@ -1,4 +1,3 @@
-import pandas as pd
 import joblib
 from .logs import get_logger
 from datetime import datetime

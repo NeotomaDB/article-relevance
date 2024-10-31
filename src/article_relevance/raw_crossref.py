@@ -7,8 +7,6 @@ from datetime import datetime
 import unicodedata
 import boto3
 import requests
-import re
-from botocore.exceptions import ClientError
 import base64
 
 def pull_crossref(doi):
