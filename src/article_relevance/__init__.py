@@ -1,17 +1,25 @@
 #from .logs import get_logger
-from .loadPQ import loadPQ
-from .gddQuery import gddQuery
-from .rec_print import rel_print
-from .data_preprocessing import data_preprocessing
-from .add_embeddings import add_embeddings
-from .relevancePredict import relevancePredict
-from .relevancePredictTrain import relevancePredictTrain
-from .predToPQ import predToPQ
-from .NeotomaOneHotEncoder import NeotomaOneHotEncoder
-from .clean_dois import clean_dois
-from .clean_orcids import clean_orcids
-from .add_labels import add_paper_labels
-from .api_calls import get_pub_for_embedding, get_publication_metadata
-from .register_apis import register_label, register_embedding, register_project, register_dois, register_person, register_paper_label
-from .check_apis import project_exists, label_exists, paper_label_exists, embedding_exists, person_exists
-from .get_model_data import get_model_data
+from .gddQuery import gddQuery as gddQuery
+from .rec_print import rel_print as rel_print
+from .data_preprocessing import data_preprocessing as data_preprocessing
+from .add_embeddings import add_embeddings as add_embeddings
+from .relevancePredict import relevancePredict as relevancePredict
+from .relevancePredictTrain import relevancePredictTrain as relevancePredictTrain
+from .NeotomaOneHotEncoder import NeotomaOneHotEncoder as NeotomaOneHotEncoder
+from .clean_dois import clean_dois as clean_dois
+from .clean_orcids import clean_orcids as clean_orcids
+from .add_labels import add_paper_labels as add_paper_labels
+from .api_calls import get_pub_for_embedding as get_pub_for_embedding
+from .api_calls import get_publication_metadata as get_publication_metadata
+from .register_apis import register_label as register_label
+from .register_apis import register_embedding as register_embedding
+from .register_apis import register_project as register_project
+from .register_apis import register_dois as register_dois
+from .register_apis import register_person as register_person
+from .register_apis import register_paper_label as register_paper_label
+from .check_apis import project_exists as project_exists
+from .check_apis import label_exists as label_exists
+from .check_apis import paper_label_exists as paper_label_exists
+from .check_apis import embedding_exists as embedding_exists
+from .check_apis import person_exists as person_exists
+from .get_model_data import get_model_data as get_model_data

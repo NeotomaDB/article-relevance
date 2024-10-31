@@ -1,13 +1,13 @@
-import requests
+from requests import get
 from requests.exceptions import ReadTimeout
 import os
 import json
 
 def get_model_data(model:str, project = None):
     try:
-        outcome = requests.get('http://' + os.environ['API_HOME'] + '/v0.1/modeldata',
-                            params = {'project': project, 'model': model},
-                            timeout = 10)
+        outcome = get(f'http://{os.environ['API_HOME']}/v0.1/modeldata',
+                      params = {'project': project, 'model': model},
+                      timeout = 10)
         if outcome.status_code == 200:
             call_output = json.loads(outcome.content).get('data')
             if call_output is None:

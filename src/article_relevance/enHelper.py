@@ -1,4 +1,5 @@
 from langdetect import detect
+from langdetect.lang_detect_exception import LangDetectException
 
 def enHelper(value: str):
     """_Test to see if a string has a detectable language._
@@ -20,7 +21,7 @@ def enHelper(value: str):
     """    
     try:
         detect_lang = detect(value)
-    except:
+    except LangDetectException:
         detect_lang = "error"
     return detect_lang
 

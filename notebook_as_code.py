@@ -6,6 +6,13 @@ import re
 import pandas as pd
 import json
 from collections import Counter
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression 
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.naive_bayes import BernoulliNB
+from sklearn.ensemble import RandomForestClassifier
+
 
 load_dotenv()
 
@@ -50,13 +57,6 @@ data_embedding = [i['embeddings'] for i in data_model]
 data_input = pd.DataFrame(data_embedding, columns = [f'embedding_{str(i)}' for i in range(len(data_model[0]['embeddings']))])
 data_input = data_input.assign(doi = [i['doi'] for i in data_model])
 data_input = data_input.assign(target = [i['target'] for i in data_model])
-
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression 
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.naive_bayes import BernoulliNB
-from sklearn.ensemble import RandomForestClassifier
 
 X_train, X_test, y_train, y_test = train_test_split(data_input.copy(),
                                                     data_input['target'],

@@ -149,6 +149,6 @@ def gddQuery(df = None,
     result_df['queryinfo_n_recent'] = n_recent_articles
     result_df['queryinfo_term'] = term
     
-    logger.info(f'{result_df.columns} metadata for {results_df.shape[0]} articles saved.')
+    logger.info(f'{result_df.columns} metadata for {result_df.shape[0]} articles saved.')
 
     return result_df

@@ -1,4 +1,5 @@
 [project]
+requires-python = ">=3.11"
 name = "neotomaart"
 description = "Article Recommendation system for Research Databases."
 version = "0.0.1"
@@ -17,7 +18,9 @@ dependencies = [
     "datetime>=5.5",
     "langdetect>=1.0.9",
     "pandas>=2.2.3",
+    "python-dotenv>=1.0.1",
     "requests>=2.32.3",
+    "scikit-learn>=1.5.2",
 ]
 [project.urls]
 "Source code" = "https://github.com/NeotomaDB/article-relevance"
