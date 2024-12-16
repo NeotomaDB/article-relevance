@@ -14,13 +14,17 @@ maintainers = [
 keywords = ["postgres", "sklearn", "embeddings", "recommender", "Docker"]
 classifiers = ["Development Status :: 3 - Alpha", "Programming Language :: Python :: 3"]
 dependencies = [
+    "adapters>=1.0.1",
     "bs4>=0.0.2",
     "datetime>=5.5",
+    "huggingface-hub>=0.26.2",
     "langdetect>=1.0.9",
+    "mkdocstrings[python]>=0.18",
     "pandas>=2.2.3",
     "python-dotenv>=1.0.1",
     "requests>=2.32.3",
     "scikit-learn>=1.5.2",
+    "torch>=2.5.1",
 ]
 [project.urls]
 "Source code" = "https://github.com/NeotomaDB/article-relevance"

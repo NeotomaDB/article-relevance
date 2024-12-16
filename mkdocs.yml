@@ -1,0 +1,18 @@
+site_name: My Docs
+repo_url: https://github.com/NeotomaDB/article-relevance
+repo_name: GitHub
+site_description: Documentation for the Article Relevance project.
+theme:
+  name: mkdocs
+  locale: en
+  highlightjs: true
+  hljs_languages:
+    - yaml
+    - rust
+    - python
+    - sql
+plugins:
+- mkdocstrings:
+    handlers:
+      python:
+        paths: [src]
