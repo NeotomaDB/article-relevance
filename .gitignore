@@ -181,3 +181,4 @@ logs/
 results/
 
 .vscode/
+uv.lock

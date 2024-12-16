@@ -12,7 +12,7 @@ def add_paper_labels(labellist: list,
         create (bool, optional): _If no label data exists, should it be created in the cloud?_. Defaults to False.
 
     Returns:
-        _dict_: _A list of dict objects returned from `register_paper_label()`._
+        dict: _A list of dict objects returned from `register_paper_label()`._
     """
     valid_project = project_exists(project)
     registry = []

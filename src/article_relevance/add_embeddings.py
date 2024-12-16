@@ -14,21 +14,23 @@ def add_embeddings(article_metadata:list,
                    check:bool = True,
                    register:bool = True):
     """
-    Add sentence embeddings to the dataframe using the allenai/specter2 model. 
+    Add sentence embeddings to the dataframe using the chosen model.
+    
     Args:
         article_metadata (list[dict]): A list of dicts with each entry representing metadata from each article. 
-        text_col (str): Coluconst doimn with text feature.
+        text_col (str): Column with text feature.
         model_name (str): Model name on hugging face model hub. Also used to index embeddings within the database.
         adapter_name (str): Adapter name on hugging face model hub.
         check (bool): Should we check to see whether an embedding for this paper & embedding currently exists in the database?
         register (bool): Should we add the embedded data to the database?
+
     Returns:
         list A list of embeddings for each item in article_embedding with a list of embeddings, the article doi, the date and the embedding model used.
     
     # Generate embedding on a record that does not currently exist in the database.
     # Setting `check` and `register` to `False` to support testing. 
     >>> test = ar.add_embeddings(article_metadata = [{'doi': '10.2147/dddt.s141740', 
-                                               'text': 'antiglycation, radical scavenging, and semicarbazide-sensitive amine oxidase inhibitory activities of acetohydroxamic acid in vitro[SEP][SEP]',
+                                               'text': 'antiglycation, radical scavenging, and semicarbazide-sensitive amine oxidase inhibitory activities of acetohydroxamic acid in vitro',
                                                'language': 'en'}],
                        text_col = 'text',
                        model_name = 'allenai/specter2_base',
@@ -37,15 +39,19 @@ def add_embeddings(article_metadata:list,
                        register = False)
     >>> len(test)
     1
+    
     >>> test[0].keys()
     dict_keys(['embeddings', 'doi', 'date', 'model'])
+    
     >>> test[0].get('doi')
     '10.2147/dddt.s141740'
+    
     >>> len(test[0].get('embeddings'))
     768
+
     # Try to generate an embedding without the proper article_metadata structure:
     >>> test = ar.add_embeddings(article_metadata = [{'abcd': '10.2147/dddt.s141740', 
-                                               'text': 'antiglycation, radical scavenging, and semicarbazide-sensitive amine oxidase inhibitory activities of acetohydroxamic acid in vitro[SEP][SEP]',
+                                               'text': 'antiglycation, radical scavenging, and semicarbazide-sensitive amine oxidase inhibitory activities of acetohydroxamic acid in vitro',
                                                'language': 'en'}],
                        text_col = 'text',
                        model_name = 'allenai/specter2_base',
@@ -79,7 +85,6 @@ def add_embeddings(article_metadata:list,
             check_embedding = embedding_exists(doi = i.get('doi'), model = model_name)
         else:
             check_embedding = None
-
         if check_embedding is not None:
             print(f"{model_name} embeddings already exist for {i.get('doi')}.")
             embedding_object.append(check_embedding)
@@ -99,5 +104,5 @@ def add_embeddings(article_metadata:list,
             embedding_object.append(embeddings_dict)
             if register:
                 register_embedding(embeddings_dict)    
-    assert len(embedding_object) != len(article_metadata), "The submitted object and returned object are not of the same length."
+    assert len(embedding_object) == len(article_metadata), "The submitted object and returned object are not of the same length."
     return embedding_object

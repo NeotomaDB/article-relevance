@@ -13,10 +13,9 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import BernoulliNB
 from sklearn.ensemble import RandomForestClassifier
 
-
 load_dotenv()
 
-API_HOME = os.environ['API_HOME']
+API_HOME = os.environ['API_HOME'] = 'localhost:3101'
 
 with open('data/raw/neotoma_dois.csv') as file:
     db_data = list(csv.DictReader(file))
@@ -90,7 +89,7 @@ resultsDict = ar.relevancePredictTrain(x_train = X_train, y_train = y_train, cla
 with open('results.json', 'w', encoding='UTF-8') as f:
     json.dump(resultsDict['report'], f, indent=4, sort_keys=True, default=str)
 
-results = ar.relevancePredict(data_input, model = 'data/models/decisiontreeclassifier_2024-09-22_22-30-35.joblib')
+results = ar.relevancePredict(data_input, model = 'data/models/bernoullinb_2024-12-12_14-02-11.joblib')
 
 # Get new papers:
 with open('./data/raw/newdois.csv', 'r') as file:
@@ -113,9 +112,17 @@ models = [i for i in os.listdir('./data/models/') if re.match(r'^.*joblib$', i)]
 
 results = []
 for i in models:
-    results.append(ar.relevancePredict(data_input, model = i))
+    results.append(ar.relevancePredict(data_input, model = f'./data/models/{i}'))
 
-goodpapers = results[0].loc[results[0]['prediction'] == 1]['doi'].tolist()
-pubs = [ar.get_publication_metadata(i) for i in goodpapers]
+pubs = [ar.get_publication_metadata(i) for i in results[0]['doi']]
+pub_full = pd.concat([pd.DataFrame(i) for i in pubs])
+pub_full['doi'] = pub_full['doi'].astype('str')
+
+full_set = pd.concat(results)
+full_set['doi'] = full_set['doi'].astype('str')
+
+full_set.pivot(index='doi', columns = 'model_metadata', values = 'prediction').to_csv('./data/results/full_data_pivot.csv')
+full_set.to_csv('./data/results/full_run_date.csv')
+
 
 counts = Counter([i[0].get('containertitle') for i in pubs])
