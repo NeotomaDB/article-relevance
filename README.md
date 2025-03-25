@@ -7,6 +7,8 @@
 
 ![Banner](assets/ffossils-logo-text.png)
 
+[![lifecycle](https://img.shields.io/badge/lifecycle-active-orange.svg)](https://www.tidyverse.org/lifecycle/#active)
+
 # **Neotoma Article Relevance Tool (NeotomaART): Finding Fossils in the Literature**
 
 This project is forked from the larger Neotoma [Meta-Review project](https://github.com/NeotomaDB/metareview), as a stand-alone relevance ML project.
