@@ -7,7 +7,7 @@
 
 ![Banner](assets/ffossils-logo-text.png)
 
-[![lifecycle](https://img.shields.io/badge/lifecycle-active-orange.svg)](https://www.tidyverse.org/lifecycle/#active)
+[![lifecycle](https://img.shields.io/badge/lifecycle-active-orange.svg)]
 
 # **Neotoma Article Relevance Tool (NeotomaART): Finding Fossils in the Literature**
 
